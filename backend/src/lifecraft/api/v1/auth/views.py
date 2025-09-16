@@ -15,14 +15,22 @@ class SignupView(APIView):
          # Check if username exists
         if username and User.objects.filter(username=username).exists():
             return Response(
-                {"error": "Username already taken"},
+                {
+                    "status_code" : 6001,
+                    "error": "Username already taken",
+                    "data" : {},
+                    },
                 status=status.HTTP_409_CONFLICT  
             )
 
         # Check if email exists
         if email and User.objects.filter(email=email).exists():
             return Response(
-                {"error": "Email already exists"},
+                {
+                    "status_code" : 6001,
+                    "error": "Email already exists",
+                    "data" : {},
+                    },
                 status=status.HTTP_409_CONFLICT
             )
         
@@ -31,13 +39,18 @@ class SignupView(APIView):
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
             return Response({
-                "msg": "Account created successfully",
-                "first_name": user.first_name,
-                "username": user.username,
-                "access": str(refresh.access_token),
-                "refresh": str(refresh)
+                "status_code" : 6000,
+                "message": "Account created successfully",
+                "data" : {
+                    "first_name": user.first_name,
+                    "username": user.username,
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh)
+                }
+                
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginView(APIView):
     def post(self, request):
@@ -47,12 +60,22 @@ class LoginView(APIView):
             if user:
                 refresh = RefreshToken.for_user(user)
                 return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'user': {
+                    'status_code' : 6000,
+                    "message": "Logged in successfully",
+                    'data': {
                         'first_name': user.first_name,
-                        'username': user.username
+                        'username': user.username,
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
                     }
                 })
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "status_code" : 6001,
+                'error': 'Invalid credentials',
+                'data': {}}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
