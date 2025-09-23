@@ -13,20 +13,35 @@ from .serializers import SignupSerializer, LoginSerializer, PasswordResetConfirm
 
 class SignupView(APIView):
     def post(self, request):
+        username = request.data.get("username")
+        email = request.data.get("email")
+
+        # Check if username exists
+        if username and User.objects.filter(username=username).exists():
+            return Response(
+                {"error": "Username already taken"},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        # Check if email exists
+        if email and User.objects.filter(email=email).exists():
+            return Response(
+                {"error": "Email already exists"},
+                status=status.HTTP_409_CONFLICT
+            )
+
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
             return Response({
-                "status_code": 6000,
-                "message": "Account created successfully",
-                "data": {
-                    "username": user.username,
-                    "email": user.email,
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                }
+                "msg": "Account created successfully",
+                "username": user.username,
+                "email": user.email,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
             }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

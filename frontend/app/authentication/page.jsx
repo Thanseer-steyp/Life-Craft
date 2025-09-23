@@ -1,5 +1,5 @@
 "use client";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -30,101 +30,129 @@ function AuthPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setMessage("");
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+  setMessage("");
 
-    try {
-      if (resetPassword) {
-        // 🔹 Reset Password Flow
-        if (!otpSent) {
-          try {
-            await axios.post(
-              "http://localhost:8000/api/v1/auth/password-reset-request/",
-              {
-                email: formData.email,
-              }
-            );
-            setMessage("OTP sent to your email");
-            setOtpSent(true);
-          } catch (err) {
-            setError(err.response?.data?.error || "Email not found");
-            setOtpSent(false);
-          }
-        } else {
-          await axios.post(
-            "http://localhost:8000/api/v1/auth/password-reset-confirm/",
-            {
-              email: formData.email,
-              otp: formData.otp,
-              new_password: formData.newPassword,
-            }
-          );
-          setMessage("Password reset successful! Please login.");
-          setResetPassword(false);
-          setOtpSent(false);
-          setIsLogin(true);
-        }
-      } else if (isLogin && !useOTP) {
-        // 🔹 Login with Password
-        const res = await axios.post(
-          "http://localhost:8000/api/v1/auth/login/",
+  try {
+    if (resetPassword) {
+      // 🔹 Reset Password Flow
+      if (!otpSent) {
+        await axios.post(
+          "http://localhost:8000/api/v1/auth/password-reset-request/",
+          { email: formData.email }
+        );
+        setMessage("OTP sent to your email");
+        setOtpSent(true);
+      } else {
+        await axios.post(
+          "http://localhost:8000/api/v1/auth/password-reset-confirm/",
           {
             email: formData.email,
-            password: formData.password,
+            otp: formData.otp,
+            new_password: formData.newPassword,
+          }
+        );
+        setMessage("Password reset successful! Please login.");
+        setResetPassword(false);
+        setOtpSent(false);
+        setIsLogin(true);
+      }
+    } else if (isLogin && !useOTP) {
+      // 🔹 Login with Password
+      const res = await axios.post(
+        "http://localhost:8000/api/v1/auth/login/",
+        {
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      localStorage.setItem("access", res.data.data.access);
+      localStorage.setItem("refresh", res.data.data.refresh);
+
+      // 🔹 Admin check
+      if (formData.email === "admin.lifecraft@gmail.com") {
+        router.push("/admin-dashboard");
+      } else {
+        // 🔹 Advisor check
+        const advisorRes = await axios.get(
+          "http://localhost:8000/api/v1/advisor/advisors-list/",
+          {
+            headers: { Authorization: `Bearer ${res.data.data.access}` },
+          }
+        );
+
+        const isAdvisor = advisorRes.data.emails.includes(formData.email);
+
+
+        if (isAdvisor) {
+          router.push("/advisor-dashboard");
+        } else {
+          router.push("/");
+        }
+      }
+    } else if (isLogin && useOTP) {
+      // 🔹 Login with OTP
+      if (!otpSent) {
+        await axios.post("http://localhost:8000/api/v1/auth/otp-request/", {
+          email: formData.email,
+        });
+        setMessage("OTP sent to your email");
+        setOtpSent(true);
+      } else {
+        const res = await axios.post(
+          "http://localhost:8000/api/v1/auth/otp-verify/",
+          {
+            email: formData.email,
+            otp: formData.otp,
           }
         );
         localStorage.setItem("access", res.data.data.access);
         localStorage.setItem("refresh", res.data.data.refresh);
-        router.push("/");
-      } else if (isLogin && useOTP) {
-        // 🔹 Login with OTP
-        if (!otpSent) {
-          try {
-            await axios.post("http://localhost:8000/api/v1/auth/otp-request/", {
-              email: formData.email,
-            });
-            setMessage("OTP sent to your email");
-            setOtpSent(true); // ✅ only set if success
-          } catch (err) {
-            setError(err.response?.data?.error || "Email not found");
-            setOtpSent(false); // ❌ don’t proceed
-          }
+
+        if (formData.email === "admin.lifecraft@gmail.com") {
+          router.push("/admin-dashboard");
         } else {
-          try {
-            const res = await axios.post(
-              "http://localhost:8000/api/v1/auth/otp-verify/",
-              {
-                email: formData.email,
-                otp: formData.otp,
-              }
-            );
-            localStorage.setItem("access", res.data.data.access);
-            localStorage.setItem("refresh", res.data.data.refresh);
+          // 🔹 Advisor check
+          const advisorRes = await axios.get(
+            "http://localhost:8000/api/v1/user/advisors/",
+            {
+              headers: { Authorization: `Bearer ${res.data.data.access}` },
+            }
+          );
+
+          const isAdvisor = advisorRes.data.some(
+            (adv) => adv.email === formData.email
+          );
+
+          if (isAdvisor) {
+            router.push("/advisor-dashboard");
+          } else {
             router.push("/");
-          } catch (err) {
-            setError(err.response?.data?.error || "Invalid OTP");
           }
         }
-      } else {
-        // 🔹 Signup
-        await axios.post("http://localhost:8000/api/v1/auth/signup/", {
-          username: formData.username,
-          first_name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        });
-        alert("Signup successful! Please login.");
-        setIsLogin(true);
       }
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      setError(err.response?.data?.error || "Something went wrong");
-    } finally {
-      setLoading(false);
+    } else {
+      // 🔹 Signup
+      await axios.post("http://localhost:8000/api/v1/auth/signup/", {
+        username: formData.username,
+        first_name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      alert("Signup successful! Please login.");
+      setIsLogin(true);
     }
-  };
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    setError(err.response?.data?.error || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleResend = async () => {
     try {
@@ -132,7 +160,7 @@ function AuthPage() {
         email: formData.email,
       });
       setMessage("OTP resent successfully");
-      setCooldown(30); // start countdown
+      setCooldown(30);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to resend OTP");
     }
@@ -164,7 +192,6 @@ function AuthPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Signup extra fields */}
           {!isLogin && !resetPassword && (
             <>
               <input
@@ -188,7 +215,6 @@ function AuthPage() {
             </>
           )}
 
-          {/* Always need email */}
           <input
             type="email"
             name="email"
@@ -197,12 +223,11 @@ function AuthPage() {
             onChange={handleChange}
             className="w-full p-2 border rounded-lg text-black"
             required
-            disabled={otpSent && (useOTP || resetPassword)} // ✅ disable after OTP sent
+            disabled={otpSent && (useOTP || resetPassword)}
           />
 
-          {/* Reset Password fields */}
           {resetPassword ? (
-            otpSent ? (
+            otpSent && (
               <>
                 <input
                   type="text"
@@ -223,7 +248,7 @@ function AuthPage() {
                   required
                 />
               </>
-            ) : null
+            )
           ) : isLogin && useOTP ? (
             otpSent && (
               <input
@@ -277,7 +302,7 @@ function AuthPage() {
                 : "Login"
               : "Signup"}
           </button>
-          {/* Resend OTP button (shows only after OTP is sent) */}
+
           {otpSent && (
             <div className="mt-3 text-center">
               <button

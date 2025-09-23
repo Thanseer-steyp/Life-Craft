@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     #My apps
     'register',
     'user',
+    'advisor',
 
 ]
 

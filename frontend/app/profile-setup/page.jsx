@@ -1,8 +1,10 @@
 "use client"
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
-export default function ProfileForm() {
+function ProfileForm() {
+  const router = useRouter();
   const [profile, setProfile] = useState({
     age: "",
     retirement_age: "",
@@ -61,6 +63,7 @@ export default function ProfileForm() {
       setMessage("Profile submitted successfully!");
       setProfile({ age: "", retirement_age: "", bio: "", interests: "", profile_image: null });
       setPreview(null);
+      router.push("/dream-setup");
     } catch (err) {
       console.error(err);
       setMessage("Error submitting profile.");
@@ -122,3 +125,5 @@ export default function ProfileForm() {
     </div>
   );
 }
+
+export default ProfileForm
