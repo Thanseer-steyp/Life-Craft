@@ -76,7 +76,7 @@ function BecomeAdvisorForm() {
       );
 
       setMessage("Advisor request submitted successfully!");
-      router.push("/user-dashboard");
+      router.push("/");
       setFormData({
         age: "",
         gender: "Male",

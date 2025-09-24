@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from user.models import Profile,DreamSetup,AdvisorRequest
+from user.models import Profile,DreamSetup,AdvisorRequest,Message
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,3 +104,10 @@ class AdvisorRequestSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "submitted_at",]
 
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.username", read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ["id", "sender", "sender_name", "receiver", "content", "created_at", "is_read"]

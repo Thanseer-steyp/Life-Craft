@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 function Page() {
   const [userData, setUserData] = useState(null);
@@ -73,6 +74,8 @@ function Page() {
           <p>No dreams added yet.</p>
         )}
       </div>
+
+      <Link href="/booking-appoinment" className="p-3 bg-amber-700 text-white font-bold rounded-2xl">Consult an Advisor</Link>
     </div>
   );
 }
