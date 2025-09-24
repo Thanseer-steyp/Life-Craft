@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from api.v1.user.serializers import AdvisorRequestSerializer
 from user.models import AdvisorRequest
-from django.contrib.auth.models import User
+from api.v1.advisor.serializers import AdvisorSerializer
 from advisor.models import Advisor
+
+
 
 class AdminAdvisorRequestsView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -26,17 +28,28 @@ class AdminAdvisorRequestsView(APIView):
             return Response({"error": "Request not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if action == "accept":
+            if advisor_request.status != "pending":
+                return Response({"error": "Request already processed"}, status=status.HTTP_400_BAD_REQUEST)
+
             advisor_request.status = "accepted"
             advisor_request.save()
 
-            # Add to Advisors table
-            Advisor.objects.create(
+            # Create Advisor with all fields
+            advisor = Advisor.objects.create(
                 user=advisor_request.user,
                 email=advisor_request.user.email,
-                username=advisor_request.user.username
+                username=advisor_request.user.username,
+                age=advisor_request.age,
+                gender=advisor_request.gender,
+                education=advisor_request.education,
+                experience_years=advisor_request.experience_years,
+                adhar_number=advisor_request.adhar_number,
+                phone_number=advisor_request.phone_number,
+                photo=advisor_request.photo,
             )
 
-            return Response({"message": "Advisor request accepted"}, status=status.HTTP_200_OK)
+            serializer = AdvisorSerializer(advisor)
+            return Response({"message": "Advisor request accepted", "advisor": serializer.data}, status=status.HTTP_200_OK)
 
         elif action == "decline":
             advisor_request.status = "declined"
@@ -44,4 +57,5 @@ class AdminAdvisorRequestsView(APIView):
             return Response({"message": "Advisor request declined"}, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
 

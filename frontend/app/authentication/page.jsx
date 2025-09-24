@@ -30,101 +30,62 @@ function AuthPage() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
-  setMessage("");
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
 
-  try {
-    if (resetPassword) {
-      // 🔹 Reset Password Flow
-      if (!otpSent) {
-        await axios.post(
-          "http://localhost:8000/api/v1/auth/password-reset-request/",
-          { email: formData.email }
-        );
-        setMessage("OTP sent to your email");
-        setOtpSent(true);
-      } else {
-        await axios.post(
-          "http://localhost:8000/api/v1/auth/password-reset-confirm/",
-          {
-            email: formData.email,
-            otp: formData.otp,
-            new_password: formData.newPassword,
-          }
-        );
-        setMessage("Password reset successful! Please login.");
-        setResetPassword(false);
-        setOtpSent(false);
-        setIsLogin(true);
-      }
-    } else if (isLogin && !useOTP) {
-      // 🔹 Login with Password
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/auth/login/",
-        {
-          email: formData.email,
-          password: formData.password,
-        }
-      );
-
-      localStorage.setItem("access", res.data.data.access);
-      localStorage.setItem("refresh", res.data.data.refresh);
-
-      // 🔹 Admin check
-      if (formData.email === "admin.lifecraft@gmail.com") {
-        router.push("/admin-dashboard");
-      } else {
-        // 🔹 Advisor check
-        const advisorRes = await axios.get(
-          "http://localhost:8000/api/v1/advisor/advisors-list/",
-          {
-            headers: { Authorization: `Bearer ${res.data.data.access}` },
-          }
-        );
-
-        const isAdvisor = advisorRes.data.emails.includes(formData.email);
-
-
-        if (isAdvisor) {
-          router.push("/advisor-dashboard");
+    try {
+      if (resetPassword) {
+        // 🔹 Reset Password Flow
+        if (!otpSent) {
+          await axios.post(
+            "http://localhost:8000/api/v1/auth/password-reset-request/",
+            { email: formData.email }
+          );
+          setMessage("OTP sent to your email");
+          setOtpSent(true);
         } else {
-          router.push("/");
+          await axios.post(
+            "http://localhost:8000/api/v1/auth/password-reset-confirm/",
+            {
+              email: formData.email,
+              otp: formData.otp,
+              new_password: formData.newPassword,
+            }
+          );
+          setMessage("Password reset successful! Please login.");
+          setResetPassword(false);
+          setOtpSent(false);
+          setIsLogin(true);
         }
-      }
-    } else if (isLogin && useOTP) {
-      // 🔹 Login with OTP
-      if (!otpSent) {
-        await axios.post("http://localhost:8000/api/v1/auth/otp-request/", {
-          email: formData.email,
-        });
-        setMessage("OTP sent to your email");
-        setOtpSent(true);
-      } else {
+      } else if (isLogin && !useOTP) {
+        // 🔹 Login with Password
         const res = await axios.post(
-          "http://localhost:8000/api/v1/auth/otp-verify/",
+          "http://localhost:8000/api/v1/auth/login/",
           {
             email: formData.email,
-            otp: formData.otp,
+            password: formData.password,
           }
         );
+
         localStorage.setItem("access", res.data.data.access);
         localStorage.setItem("refresh", res.data.data.refresh);
 
+        // 🔹 Admin check
         if (formData.email === "admin.lifecraft@gmail.com") {
           router.push("/admin-dashboard");
         } else {
           // 🔹 Advisor check
           const advisorRes = await axios.get(
-            "http://localhost:8000/api/v1/user/advisors/",
+            "http://localhost:8000/api/v1/advisor/advisors-list/",
             {
               headers: { Authorization: `Bearer ${res.data.data.access}` },
             }
           );
 
           const isAdvisor = advisorRes.data.some(
-            (adv) => adv.email === formData.email
+            (advisor) => advisor.email === formData.email
           );
 
           if (isAdvisor) {
@@ -133,26 +94,65 @@ function AuthPage() {
             router.push("/");
           }
         }
-      }
-    } else {
-      // 🔹 Signup
-      await axios.post("http://localhost:8000/api/v1/auth/signup/", {
-        username: formData.username,
-        first_name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
-      alert("Signup successful! Please login.");
-      setIsLogin(true);
-    }
-  } catch (err) {
-    console.error(err.response?.data || err.message);
-    setError(err.response?.data?.error || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
+      } else if (isLogin && useOTP) {
+        // 🔹 Login with OTP
+        if (!otpSent) {
+          await axios.post("http://localhost:8000/api/v1/auth/otp-request/", {
+            email: formData.email,
+          });
+          setMessage("OTP sent to your email");
+          setOtpSent(true);
+        } else {
+          const res = await axios.post(
+            "http://localhost:8000/api/v1/auth/otp-verify/",
+            {
+              email: formData.email,
+              otp: formData.otp,
+            }
+          );
+          localStorage.setItem("access", res.data.data.access);
+          localStorage.setItem("refresh", res.data.data.refresh);
 
+          if (formData.email === "admin.lifecraft@gmail.com") {
+            router.push("/admin-dashboard");
+          } else {
+            // 🔹 Advisor check
+            const advisorRes = await axios.get(
+              "http://localhost:8000/api/v1/user/advisors/",
+              {
+                headers: { Authorization: `Bearer ${res.data.data.access}` },
+              }
+            );
+
+            const isAdvisor = advisorRes.data.some(
+              (adv) => adv.email === formData.email
+            );
+
+            if (isAdvisor) {
+              router.push("/advisor-dashboard");
+            } else {
+              router.push("/");
+            }
+          }
+        }
+      } else {
+        // 🔹 Signup
+        await axios.post("http://localhost:8000/api/v1/auth/signup/", {
+          username: formData.username,
+          first_name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+        alert("Signup successful! Please login.");
+        setIsLogin(true);
+      }
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      setError(err.response?.data?.error || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleResend = async () => {
     try {
@@ -226,9 +226,31 @@ function AuthPage() {
             disabled={otpSent && (useOTP || resetPassword)}
           />
 
-          {resetPassword ? (
-            otpSent && (
-              <>
+          {resetPassword
+            ? otpSent && (
+                <>
+                  <input
+                    type="text"
+                    name="otp"
+                    placeholder="Enter OTP"
+                    value={formData.otp}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded-lg text-black"
+                    required
+                  />
+                  <input
+                    type="password"
+                    name="newPassword"
+                    placeholder="New Password"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded-lg text-black"
+                    required
+                  />
+                </>
+              )
+            : isLogin && useOTP
+            ? otpSent && (
                 <input
                   type="text"
                   name="otp"
@@ -238,42 +260,18 @@ function AuthPage() {
                   className="w-full p-2 border rounded-lg text-black"
                   required
                 />
+              )
+            : !resetPassword && (
                 <input
                   type="password"
-                  name="newPassword"
-                  placeholder="New Password"
-                  value={formData.newPassword}
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
                   onChange={handleChange}
                   className="w-full p-2 border rounded-lg text-black"
-                  required
+                  required={!useOTP}
                 />
-              </>
-            )
-          ) : isLogin && useOTP ? (
-            otpSent && (
-              <input
-                type="text"
-                name="otp"
-                placeholder="Enter OTP"
-                value={formData.otp}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-              />
-            )
-          ) : (
-            !resetPassword && (
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required={!useOTP}
-              />
-            )
-          )}
+              )}
 
           <button
             type="submit"

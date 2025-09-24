@@ -2,7 +2,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import ProfileSerializer,UserDashboardSerializer,DreamSetupSerializer,AdvisorRequestSerializer
-from user.models import AdvisorRequest
+from user.models import AdvisorRequest,DreamSetup
 
 
 
@@ -59,18 +59,10 @@ class AdvisorRequestView(APIView):
         return Response({"requested": exists}, status=200)
 
     def post(self, request):
-        profile = getattr(request.user, "profile", None)
-        age = getattr(profile, "age", None)
-        if age is None:
-            return Response(
-                {"error": "Please complete your profile to submit advisor request"},
-                status=400,
-            )
-
-        # Manually add name and age into serializer context
         data = request.data.copy()
-        data["name"] = request.user.first_name or request.user.username
-        data["age"] = age
+        # Always set name if not provided
+        if not data.get("name"):
+            data["name"] = request.user.first_name or request.user.username
 
         serializer = AdvisorRequestSerializer(data=data)
         if serializer.is_valid():
@@ -79,6 +71,7 @@ class AdvisorRequestView(APIView):
                 {"message": "Advisor request submitted successfully"}, status=201
             )
         return Response(serializer.errors, status=400)
+
 
 
 

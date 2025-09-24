@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 function BecomeAdvisorForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    age: "",
     gender: "Male",
     education: "",
     experience_years: "",
@@ -16,9 +17,9 @@ function BecomeAdvisorForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [token, setToken] = useState(null);
-  const [userInfo, setUserInfo] = useState({ name: "", age: null });
+  const [userInfo, setUserInfo] = useState({ name: "" });
 
-  // Load token and user info on mount
+  // Load token & user info (for name)
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     setToken(accessToken);
@@ -31,7 +32,6 @@ function BecomeAdvisorForm() {
         .then((res) => {
           setUserInfo({
             name: res.data.first_name || res.data.username,
-            age: res.data.age,
           });
         })
         .catch(() => setMessage("Failed to load user info."));
@@ -59,20 +59,10 @@ function BecomeAdvisorForm() {
 
     try {
       const payload = new FormData();
-      // Add user info
-      payload.append("name", userInfo.name);
-      payload.append("age", userInfo.age);
-
-      // Add form fields
-      payload.append("gender", formData.gender);
-      payload.append("education", formData.education);
-      payload.append("experience_years", formData.experience_years);
-      payload.append("adhar_number", formData.adhar_number);
-      payload.append("phone_number", formData.phone_number);
-
-      if (formData.photo) {
-        payload.append("photo", formData.photo);
-      }
+      payload.append("name", userInfo.name); // keep name from backend
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value) payload.append(key, value);
+      });
 
       await axios.post(
         "http://localhost:8000/api/v1/user/become-advisor/",
@@ -86,8 +76,9 @@ function BecomeAdvisorForm() {
       );
 
       setMessage("Advisor request submitted successfully!");
-      router.push("/user-dashboard")
+      router.push("/user-dashboard");
       setFormData({
+        age: "",
         gender: "Male",
         education: "",
         experience_years: "",
@@ -118,9 +109,16 @@ function BecomeAdvisorForm() {
         <p>
           <strong>Name:</strong> {userInfo.name}
         </p>
-        <p>
-          <strong>Age:</strong> {userInfo.age}
-        </p>
+
+        <input
+          type="number"
+          name="age"
+          value={formData.age}
+          onChange={handleChange}
+          placeholder="Age"
+          className="w-full border rounded px-3 py-2"
+          required
+        />
 
         <select
           name="gender"
