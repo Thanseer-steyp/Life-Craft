@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
-export default function AdvisorDashboard() {
+function AdvisorDashboard() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -23,7 +24,14 @@ export default function AdvisorDashboard() {
         <ul className="space-y-4">
           {messages.map((msg) => (
             <li key={msg.id} className="p-4 border rounded-lg shadow">
-              <p className="font-semibold">{msg.sender_name}</p>
+              <p className="font-semibold">
+                <Link
+                  href={`/users/${msg.sender_id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {msg.sender_name}
+                </Link>
+              </p>
               <p className="text-gray-700">{msg.content}</p>
               <p className="text-sm text-gray-500">
                 {new Date(msg.created_at).toLocaleString()}
@@ -35,3 +43,5 @@ export default function AdvisorDashboard() {
     </div>
   );
 }
+
+export default AdvisorDashboard

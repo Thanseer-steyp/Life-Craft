@@ -107,7 +107,47 @@ class AdvisorRequestSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.CharField(source="sender.username", read_only=True)
+    sender_id = serializers.IntegerField(source="sender.id", read_only=True)
 
     class Meta:
         model = Message
-        fields = ["id", "sender", "sender_name", "receiver", "content", "created_at", "is_read"]
+        fields = [
+            "id",
+            "sender_id",
+            "sender_name",
+            "receiver",
+            "content",
+            "created_at",
+            "is_read",
+        ]
+
+
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    # Profile fields
+    age = serializers.IntegerField(source="profile.age", read_only=True)
+    retirement_age = serializers.IntegerField(source="profile.retirement_age", read_only=True)
+    bio = serializers.CharField(source="profile.bio", read_only=True)
+    interests = serializers.CharField(source="profile.interests", read_only=True)
+    profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
+
+    # Nested dreams
+    dreams = DreamSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "age",
+            "retirement_age",
+            "bio",
+            "interests",
+            "profile_image",
+            "dreams",
+        ]
+        read_only_fields = ["id"]

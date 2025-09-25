@@ -9,8 +9,6 @@ from api.v1.user.serializers import MessageSerializer
 
 
 class AdvisorListView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
         advisors = Advisor.objects.all()
         serializer = AdvisorSerializer(advisors, many=True)

@@ -1,10 +1,12 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import ProfileSerializer,UserDashboardSerializer,DreamSetupSerializer,AdvisorRequestSerializer,MessageSerializer
+from .serializers import ProfileSerializer,UserDashboardSerializer,DreamSetupSerializer,AdvisorRequestSerializer,MessageSerializer,UserSerializer
 from user.models import AdvisorRequest,DreamSetup,Message
 from rest_framework.permissions import IsAuthenticated
 from advisor.models import Advisor
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from django.contrib.auth.models import User
 
 
 
@@ -94,3 +96,22 @@ class SendMessageView(APIView):
             content=content
         )
         return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
+
+
+
+
+class UserListView(ListAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        advisor_user_ids = Advisor.objects.values_list("user_id", flat=True)
+        return (
+            User.objects.exclude(id__in=advisor_user_ids)
+                        .exclude(is_superuser=True)
+        )
+
+
+class UserDetailView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = "id"
