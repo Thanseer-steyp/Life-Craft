@@ -77,13 +77,13 @@ function AdminDashboard() {
               >
                 <div>
                   <p>
-                    <strong>Name:</strong> {req.name}
+                    <strong>Name:</strong> {req.full_name}
                   </p>
                   <p>
-                    <strong>Email:</strong> {req.user_email}
+                    <strong>Email:</strong> {req.email}
                   </p>
                   <p>
-                    <strong>Education:</strong> {req.education}
+                    <strong>Education:</strong> {req.highest_qualification}
                   </p>
                 </div>
                 <div className="flex space-x-2">

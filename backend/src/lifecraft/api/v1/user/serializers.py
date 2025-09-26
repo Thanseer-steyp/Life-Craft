@@ -86,23 +86,43 @@ class UserDashboardSerializer(serializers.ModelSerializer):
 
 
 class AdvisorRequestSerializer(serializers.ModelSerializer):
-    experience_years = serializers.IntegerField()
-
     class Meta:
         model = AdvisorRequest
         fields = [
             "id",
-            "name",
+            "profile_photo",
+            "full_name",
             "age",
             "gender",
-            "education",
-            "experience_years",
-            "adhar_number",
+            "email",
             "phone_number",
-            "photo",
+            "country_address",
+            "state_address",
+            "language_preferences",
+            "advisor_type",
+            "experience_years",
+            "company",
+            "designation",
+            "highest_qualification",
+            "specialized_in",
+            "educational_certificate",
+            "previous_companies",
+            "resume",
+            "govt_id_type",
+            "govt_id_file",
+            "govt_id_proof_id",
+            "confirm_details",
             "submitted_at",
+            "status",
         ]
-        read_only_fields = ["id", "submitted_at",]
+        read_only_fields = ["id", "submitted_at", "status"]
+
+    def validate_confirm_details(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "You must confirm that all details are correct."
+            )
+        return value
 
 
 class MessageSerializer(serializers.ModelSerializer):

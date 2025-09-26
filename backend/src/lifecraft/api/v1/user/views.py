@@ -64,9 +64,12 @@ class AdvisorRequestView(APIView):
 
     def post(self, request):
         data = request.data.copy()
-        # Always set name if not provided
-        if not data.get("name"):
-            data["name"] = request.user.first_name or request.user.username
+
+        # Take full_name & email from user if not given
+        if not data.get("full_name"):
+            data["full_name"] = request.user.get_full_name() or request.user.username
+        if not data.get("email"):
+            data["email"] = request.user.email
 
         serializer = AdvisorRequestSerializer(data=data)
         if serializer.is_valid():

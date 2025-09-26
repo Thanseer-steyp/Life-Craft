@@ -12,13 +12,11 @@ class AdminAdvisorRequestsView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get(self, request):
-        # Fetch only pending requests
         pending_requests = AdvisorRequest.objects.filter(status='pending')
         serializer = AdvisorRequestSerializer(pending_requests, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        # Accept or Decline action
         request_id = request.data.get('id')
         action = request.data.get('action')  # "accept" or "decline"
 
@@ -31,25 +29,41 @@ class AdminAdvisorRequestsView(APIView):
             if advisor_request.status != "pending":
                 return Response({"error": "Request already processed"}, status=status.HTTP_400_BAD_REQUEST)
 
-            advisor_request.status = "accepted"
-            advisor_request.save()
-
-            # Create Advisor with all fields
+            # Create Advisor with all fields from AdvisorRequest
             advisor = Advisor.objects.create(
                 user=advisor_request.user,
-                email=advisor_request.user.email,
-                username=advisor_request.user.username,
+                profile_photo=advisor_request.profile_photo,
+                full_name=advisor_request.full_name,
                 age=advisor_request.age,
                 gender=advisor_request.gender,
-                education=advisor_request.education,
-                experience_years=advisor_request.experience_years,
-                adhar_number=advisor_request.adhar_number,
+                email=advisor_request.email,
                 phone_number=advisor_request.phone_number,
-                photo=advisor_request.photo,
+                country_address=advisor_request.country_address,
+                state_address=advisor_request.state_address,
+                language_preferences=advisor_request.language_preferences,
+                advisor_type=advisor_request.advisor_type,
+                experience_years=advisor_request.experience_years,
+                company=advisor_request.company,
+                designation=advisor_request.designation,
+                highest_qualification=advisor_request.highest_qualification,
+                specialized_in=advisor_request.specialized_in,
+                educational_certificate=advisor_request.educational_certificate,
+                previous_companies=advisor_request.previous_companies,
+                resume=advisor_request.resume,
+                govt_id_type=advisor_request.govt_id_type,
+                govt_id_proof_id=advisor_request.govt_id_proof_id,
+                govt_id_file=advisor_request.govt_id_file,
+                confirm_details=advisor_request.confirm_details,
             )
 
+            # Delete request after acceptance
+            advisor_request.delete()
+
             serializer = AdvisorSerializer(advisor)
-            return Response({"message": "Advisor request accepted", "advisor": serializer.data}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Advisor request accepted and deleted", "advisor": serializer.data},
+                status=status.HTTP_200_OK
+            )
 
         elif action == "decline":
             advisor_request.status = "declined"
@@ -57,5 +71,3 @@ class AdminAdvisorRequestsView(APIView):
             return Response({"message": "Advisor request declined"}, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
-
-
