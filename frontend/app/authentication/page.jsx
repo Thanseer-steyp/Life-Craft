@@ -36,18 +36,43 @@ function AuthPage() {
     setMessage("");
 
     try {
-      if (resetPassword) {
-        // 🔹 Reset Password Flow
+      // ---------------- Signup Flow ----------------
+      if (!isLogin) {
         if (!otpSent) {
           await axios.post(
-            "http://localhost:8000/api/v1/auth/password-reset-request/",
+            "http://127.0.0.1:8000/api/v1/auth/signup-request/",
+            {
+              username: formData.username,
+              first_name: formData.name,
+              email: formData.email,
+              password: formData.password,
+            }
+          );
+          setMessage("OTP sent to your email. Enter OTP to verify signup.");
+          setOtpSent(true);
+        } else {
+          await axios.post(
+            "http://127.0.0.1:8000/api/v1/auth/signup-otp-verification/",
+            { email: formData.email, otp: formData.otp }
+          );
+          setMessage("Signup successful! Please login.");
+          setOtpSent(false);
+          setIsLogin(true);
+        }
+      }
+
+      // ---------------- Reset Password Flow ----------------
+      else if (resetPassword) {
+        if (!otpSent) {
+          await axios.post(
+            "http://127.0.0.1:8000/api/v1/auth/password-reset-otp/",
             { email: formData.email }
           );
           setMessage("OTP sent to your email");
           setOtpSent(true);
         } else {
           await axios.post(
-            "http://localhost:8000/api/v1/auth/password-reset-confirm/",
+            "http://127.0.0.1:8000/api/v1/auth/password-reset-confirm/",
             {
               email: formData.email,
               otp: formData.otp,
@@ -59,92 +84,42 @@ function AuthPage() {
           setOtpSent(false);
           setIsLogin(true);
         }
-      } else if (isLogin && !useOTP) {
-        // 🔹 Login with Password
+      }
+
+      // ---------------- Login with Password ----------------
+      else if (isLogin && !useOTP) {
         const res = await axios.post(
-          "http://localhost:8000/api/v1/auth/login/",
+          "http://127.0.0.1:8000/api/v1/auth/login/",
           {
             email: formData.email,
             password: formData.password,
           }
         );
-
         localStorage.setItem("access", res.data.data.access);
         localStorage.setItem("refresh", res.data.data.refresh);
+        router.push("/");
+      }
 
-        // 🔹 Admin check
-        if (formData.email === "admin.lifecraft@gmail.com") {
-          router.push("/admin-dashboard");
-        } else {
-          // 🔹 Advisor check
-          const advisorRes = await axios.get(
-            "http://localhost:8000/api/v1/advisor/advisors-list/",
+      // ---------------- Login with OTP ----------------
+      else if (isLogin && useOTP) {
+        if (!otpSent) {
+          await axios.post(
+            "http://127.0.0.1:8000/api/v1/auth/login-otp-request/",
             {
-              headers: { Authorization: `Bearer ${res.data.data.access}` },
+              email: formData.email,
             }
           );
-
-          const isAdvisor = advisorRes.data.some(
-            (advisor) => advisor.email === formData.email
-          );
-
-          if (isAdvisor) {
-            router.push("/advisor-dashboard");
-          } else {
-            router.push("/");
-          }
-        }
-      } else if (isLogin && useOTP) {
-        // 🔹 Login with OTP
-        if (!otpSent) {
-          await axios.post("http://localhost:8000/api/v1/auth/otp-request/", {
-            email: formData.email,
-          });
           setMessage("OTP sent to your email");
           setOtpSent(true);
         } else {
           const res = await axios.post(
-            "http://localhost:8000/api/v1/auth/otp-verify/",
-            {
-              email: formData.email,
-              otp: formData.otp,
-            }
+            "http://127.0.0.1:8000/api/v1/auth/login-otp-verification/",
+            { email: formData.email, otp: formData.otp }
           );
           localStorage.setItem("access", res.data.data.access);
           localStorage.setItem("refresh", res.data.data.refresh);
-
-          if (formData.email === "admin.lifecraft@gmail.com") {
-            router.push("/admin-dashboard");
-          } else {
-            // 🔹 Advisor check
-            const advisorRes = await axios.get(
-              "http://localhost:8000/api/v1/user/advisors/",
-              {
-                headers: { Authorization: `Bearer ${res.data.data.access}` },
-              }
-            );
-
-            const isAdvisor = advisorRes.data.some(
-              (adv) => adv.email === formData.email
-            );
-
-            if (isAdvisor) {
-              router.push("/advisor-dashboard");
-            } else {
-              router.push("/");
-            }
-          }
+          router.push("/");
         }
-      } else {
-        // 🔹 Signup
-        await axios.post("http://localhost:8000/api/v1/auth/signup/", {
-          username: formData.username,
-          first_name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        });
-        alert("Signup successful! Please login.");
-        setIsLogin(true);
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
@@ -156,10 +131,17 @@ function AuthPage() {
 
   const handleResend = async () => {
     try {
-      await axios.post("http://localhost:8000/api/v1/auth/otp-request/", {
-        email: formData.email,
-      });
+      let url = "";
+      if (!isLogin)
+        url = "http://127.0.0.1:8000/api/v1/auth/signup-otp-resend/";
+      else if (useOTP || resetPassword)
+        url = useOTP
+          ? "http://127.0.0.1:8000/api/v1/auth/login-otp-request/"
+          : "http://127.0.0.1:8000/api/v1/auth/password-reset-otp/";
+
+      await axios.post(url, { email: formData.email });
       setMessage("OTP resent successfully");
+      setFormData({ ...formData, otp: "" }); // clear input
       setCooldown(30);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to resend OTP");
@@ -177,11 +159,11 @@ function AuthPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md relative">
         <h2 className="text-2xl font-bold mb-6 text-center text-black">
-          {resetPassword
-            ? "Reset Password"
-            : isLogin
-            ? useOTP
-              ? "Login with Email OTP"
+          {isLogin
+            ? resetPassword
+              ? "Reset Password"
+              : useOTP
+              ? "Login with OTP"
               : "Login with Password"
             : "Signup"}
         </h2>
@@ -192,7 +174,8 @@ function AuthPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && !resetPassword && (
+          {/* ---------------- Signup Form ---------------- */}
+          {!isLogin && (
             <>
               <input
                 type="text"
@@ -202,6 +185,7 @@ function AuthPage() {
                 onChange={handleChange}
                 className="w-full p-2 border rounded-lg text-black"
                 required
+                disabled={otpSent}
               />
               <input
                 type="text"
@@ -211,23 +195,57 @@ function AuthPage() {
                 onChange={handleChange}
                 className="w-full p-2 border rounded-lg text-black"
                 required
+                disabled={otpSent}
               />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-lg text-black"
+                required
+                disabled={otpSent}
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-lg text-black"
+                required
+                disabled={otpSent}
+              />
+
+              {otpSent && (
+                <input
+                  type="text"
+                  name="otp"
+                  placeholder="Enter OTP"
+                  value={formData.otp}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded-lg text-black"
+                  required
+                />
+              )}
             </>
           )}
 
-          <input
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 border rounded-lg text-black"
-            required
-            disabled={otpSent && (useOTP || resetPassword)}
-          />
-
-          {resetPassword
-            ? otpSent && (
+          {/* ---------------- Reset Password ---------------- */}
+          {resetPassword && (
+            <>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-lg text-black"
+                required
+                disabled={otpSent}
+              />
+              {otpSent && (
                 <>
                   <input
                     type="text"
@@ -248,9 +266,35 @@ function AuthPage() {
                     required
                   />
                 </>
-              )
-            : isLogin && useOTP
-            ? otpSent && (
+              )}
+            </>
+          )}
+
+          {/* ---------------- Login ---------------- */}
+          {isLogin && !resetPassword && (
+            <>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-lg text-black"
+                required
+                disabled={otpSent && useOTP}
+              />
+              {!useOTP && (
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded-lg text-black"
+                  required
+                />
+              )}
+              {useOTP && otpSent && (
                 <input
                   type="text"
                   name="otp"
@@ -260,48 +304,35 @@ function AuthPage() {
                   className="w-full p-2 border rounded-lg text-black"
                   required
                 />
-              )
-            : !resetPassword && (
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-lg text-black"
-                  required={!useOTP}
-                />
               )}
+            </>
+          )}
 
+          {/* ---------------- Submit Button ---------------- */}
           <button
             type="submit"
-            className={`w-full p-2 rounded-lg text-white ${
-              resetPassword
-                ? "bg-orange-600 hover:bg-orange-700"
-                : isLogin
-                ? useOTP
-                  ? "bg-purple-600 hover:bg-purple-700"
-                  : "bg-blue-600 hover:bg-blue-700"
-                : "bg-green-600 hover:bg-green-700"
-            } transition`}
+            className="w-full p-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition"
             disabled={loading}
           >
             {loading
               ? "Please wait..."
+              : !isLogin
+              ? otpSent
+                ? "Verify OTP"
+                : "Send OTP"
               : resetPassword
               ? otpSent
                 ? "Confirm Reset"
                 : "Send OTP"
-              : isLogin
-              ? useOTP
-                ? otpSent
-                  ? "Verify OTP"
-                  : "Send OTP"
-                : "Login"
-              : "Signup"}
+              : useOTP
+              ? otpSent
+                ? "Verify OTP"
+                : "Send OTP"
+              : "Login"}
           </button>
 
-          {otpSent && (
+          {/* ---------------- Resend OTP ---------------- */}
+          {otpSent && (!isLogin || useOTP || resetPassword) && (
             <div className="mt-3 text-center">
               <button
                 type="button"
@@ -319,7 +350,7 @@ function AuthPage() {
           )}
         </form>
 
-        {/* Toggle links */}
+        {/* ---------------- Footer Links ---------------- */}
         {isLogin && !resetPassword && (
           <p className="mt-4 text-center text-gray-600">
             <button
@@ -336,44 +367,16 @@ function AuthPage() {
           </p>
         )}
 
-        {isLogin && !resetPassword && (
-          <p className="mt-2 text-center text-gray-600">
-            {useOTP ? "Or login with " : "Or login with "}{" "}
-            <button
-              onClick={() => {
-                setUseOTP(!useOTP);
-                setOtpSent(false);
-                setError("");
-                setMessage("");
-              }}
-              className="text-blue-600 font-semibold hover:underline"
-            >
-              {useOTP ? "Password" : "Email OTP"}
-            </button>
-          </p>
-        )}
-
         <p className="mt-2 text-center text-gray-600">
-          {resetPassword ? (
-            <button
-              onClick={() => {
-                setResetPassword(false);
-                setOtpSent(false);
-                setError("");
-                setMessage("");
-              }}
-              className="text-blue-600 font-semibold hover:underline"
-            >
-              Back to Login
-            </button>
-          ) : isLogin ? (
+          {isLogin ? (
             <>
               Don't have an account?{" "}
               <button
                 onClick={() => {
                   setIsLogin(false);
-                  setUseOTP(false);
+                  setOtpSent(false);
                   setError("");
+                  setMessage("");
                 }}
                 className="text-blue-600 font-semibold hover:underline"
               >
@@ -386,8 +389,9 @@ function AuthPage() {
               <button
                 onClick={() => {
                   setIsLogin(true);
-                  setUseOTP(false);
+                  setOtpSent(false);
                   setError("");
+                  setMessage("");
                 }}
                 className="text-blue-600 font-semibold hover:underline"
               >
@@ -396,6 +400,23 @@ function AuthPage() {
             </>
           )}
         </p>
+
+        {/* ---------------- Toggle password vs OTP login ---------------- */}
+        {isLogin && !resetPassword && (
+          <div className="mt-2 text-center">
+            <button
+              onClick={() => {
+                setUseOTP(!useOTP);
+                setOtpSent(false);
+                setError("");
+                setMessage("");
+              }}
+              className="text-sm text-purple-600 font-semibold hover:underline"
+            >
+              {useOTP ? "Login with Password" : "Login with OTP"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

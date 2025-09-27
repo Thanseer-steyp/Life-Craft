@@ -103,7 +103,7 @@ class SendMessageView(APIView):
 
 
 
-class UserListView(ListAPIView):
+class ClientsListView(ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
@@ -114,7 +114,7 @@ class UserListView(ListAPIView):
         )
 
 
-class UserDetailView(RetrieveAPIView):
+class ClientDetailView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = "id"

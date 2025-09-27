@@ -40,7 +40,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/v1/user/users-list") // 👈 match your Django URL
+      .get("http://localhost:8000/api/v1/user/clients-list/") // 👈 match your Django URL
       .then((res) => {
         setUsers(res.data); // store response in state
       })

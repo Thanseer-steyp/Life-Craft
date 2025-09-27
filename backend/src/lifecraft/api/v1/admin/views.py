@@ -67,7 +67,7 @@ class AdminAdvisorRequestsView(APIView):
 
         elif action == "decline":
             advisor_request.status = "declined"
-            advisor_request.save()
+            advisor_request.delete()
             return Response({"message": "Advisor request declined"}, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
