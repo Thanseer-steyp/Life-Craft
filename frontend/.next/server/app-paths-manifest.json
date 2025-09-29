@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/authentication/page": "app/authentication/page.js",
+  "/profile-setup/page": "app/profile-setup/page.js",
+  "/dream-setup/page": "app/dream-setup/page.js",
+  "/user-dashboard/page": "app/user-dashboard/page.js",
+  "/booking-appoinment/page": "app/booking-appoinment/page.js"
+}

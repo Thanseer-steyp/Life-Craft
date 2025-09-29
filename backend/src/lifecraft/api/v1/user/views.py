@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from advisor.models import Advisor
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 
@@ -116,6 +118,31 @@ class BookAppointmentView(APIView):
             user=request.user,
             advisor=advisor,
         )
+
+        # Send confirmation email
+        subject = "Appointment Request Confirmation"
+        message = f"""
+        Dear {request.user.get_full_name() or request.user.username},
+
+        Your appointment request with advisor {advisor.user.get_full_name() or advisor.user.username} 
+        has been successfully submitted.
+
+        Our team or your advisor will reach out to confirm the exact schedule shortly.  
+        Please keep an eye on your email for further updates.
+
+        Thank you for choosing our platform to connect with trusted advisors.
+
+        Best regards,  
+        The Support Team
+        """
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [request.user.email],
+            fail_silently=False,
+        )
+
         return Response(AppointmentSerializer(appointment).data, status=201)
     
 
