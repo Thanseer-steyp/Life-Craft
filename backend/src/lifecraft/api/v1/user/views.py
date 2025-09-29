@@ -1,8 +1,8 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import ProfileSerializer,UserDashboardSerializer,DreamSetupSerializer,AdvisorRequestSerializer,MessageSerializer,UserSerializer
-from user.models import AdvisorRequest,DreamSetup,Message
+from .serializers import ProfileSerializer,UserDashboardSerializer,DreamSetupSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer
+from user.models import AdvisorRequest,DreamSetup,Appointment
 from rest_framework.permissions import IsAuthenticated
 from advisor.models import Advisor
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -81,24 +81,6 @@ class AdvisorRequestView(APIView):
 
 
 
-class SendMessageView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        receiver_id = request.data.get("receiver_id")
-        content = request.data.get("content")
-
-        try:
-            advisor = Advisor.objects.get(id=receiver_id)
-        except Advisor.DoesNotExist:
-            return Response({"error": "Advisor not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        message = Message.objects.create(
-            sender=request.user,
-            receiver=advisor,
-            content=content
-        )
-        return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
 
 
 
@@ -118,3 +100,29 @@ class ClientDetailView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = "id"
+
+
+class BookAppointmentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        advisor_id = request.data.get("advisor_id")
+        try:
+            advisor = Advisor.objects.get(id=advisor_id)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Advisor not found"}, status=404)
+
+        appointment = Appointment.objects.create(
+            user=request.user,
+            advisor=advisor,
+        )
+        return Response(AppointmentSerializer(appointment).data, status=201)
+    
+
+class UserAppointmentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        appointments = Appointment.objects.filter(user=request.user).order_by("-created_at")
+        serializer = AppointmentSerializer(appointments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

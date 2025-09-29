@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import AdvisorListView,InboxView
+from .views import AdvisorListView,AppointmentInboxView,ManageAppointmentView
 
 urlpatterns = [
     path("advisors-list/", AdvisorListView.as_view(), name="advisor-list"),
-    path("inbox/", InboxView.as_view(), name="advisor-inbox"),
+    path("inbox/", AppointmentInboxView.as_view(), name="advisor-inbox"),
+    path("manage-appointment/<int:appointment_id>/", ManageAppointmentView.as_view(), name="manage-appointment"),
 ]

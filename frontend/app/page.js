@@ -92,6 +92,7 @@ function Page() {
           Login
         </Link>
       )}
+      <Link href="/user-inbox" className="bg-gray-200 rounded-full p-3 cursor-pointer text-black font-bold">Inbox</Link>
     </div>
   );
 }

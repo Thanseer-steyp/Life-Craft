@@ -39,15 +39,12 @@ function AuthPage() {
       // ---------------- Signup Flow ----------------
       if (!isLogin) {
         if (!otpSent) {
-          await axios.post(
-            "http://127.0.0.1:8000/api/v1/auth/signup-request/",
-            {
-              username: formData.username,
-              first_name: formData.name,
-              email: formData.email,
-              password: formData.password,
-            }
-          );
+          await axios.post("http://127.0.0.1:8000/api/v1/auth/signup-request/", {
+            username: formData.username,
+            first_name: formData.name,
+            email: formData.email,
+            password: formData.password,
+          });
           setMessage("OTP sent to your email. Enter OTP to verify signup.");
           setOtpSent(true);
         } else {
@@ -88,16 +85,36 @@ function AuthPage() {
 
       // ---------------- Login with Password ----------------
       else if (isLogin && !useOTP) {
-        const res = await axios.post(
-          "http://127.0.0.1:8000/api/v1/auth/login/",
-          {
-            email: formData.email,
-            password: formData.password,
-          }
-        );
+        const res = await axios.post("http://127.0.0.1:8000/api/v1/auth/login/", {
+          email: formData.email,
+          password: formData.password,
+        });
+
         localStorage.setItem("access", res.data.data.access);
         localStorage.setItem("refresh", res.data.data.refresh);
-        router.push("/");
+
+        // 🔹 Admin check
+        if (formData.email === "admin.lifecraft@gmail.com") {
+          router.push("/admin-dashboard");
+        } else {
+          // 🔹 Advisor check
+          const advisorRes = await axios.get(
+            "http://127.0.0.1:8000/api/v1/advisor/advisors-list/",
+            {
+              headers: { Authorization: `Bearer ${res.data.data.access}` },
+            }
+          );
+
+          const isAdvisor = advisorRes.data.some(
+            (advisor) => advisor.email === formData.email
+          );
+
+          if (isAdvisor) {
+            router.push("/advisor-dashboard");
+          } else {
+            router.push("/");
+          }
+        }
       }
 
       // ---------------- Login with OTP ----------------
@@ -116,9 +133,32 @@ function AuthPage() {
             "http://127.0.0.1:8000/api/v1/auth/login-otp-verification/",
             { email: formData.email, otp: formData.otp }
           );
+
           localStorage.setItem("access", res.data.data.access);
           localStorage.setItem("refresh", res.data.data.refresh);
-          router.push("/");
+
+          // 🔹 Admin check
+          if (formData.email === "admin.lifecraft@gmail.com") {
+            router.push("/admin-dashboard");
+          } else {
+            // 🔹 Advisor check
+            const advisorRes = await axios.get(
+              "http://127.0.0.1:8000/api/v1/advisor/advisors-list/",
+              {
+                headers: { Authorization: `Bearer ${res.data.data.access}` },
+              }
+            );
+
+            const isAdvisor = advisorRes.data.some(
+              (adv) => adv.email === formData.email
+            );
+
+            if (isAdvisor) {
+              router.push("/advisor-dashboard");
+            } else {
+              router.push("/");
+            }
+          }
         }
       }
     } catch (err) {

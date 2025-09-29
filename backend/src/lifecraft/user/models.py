@@ -11,8 +11,13 @@ class Profile(models.Model):
     interests = models.TextField(blank=True, null=True)  # free text or CSV
     profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
 
+    class Meta:
+        db_table = "ClientsProfiles"   # 👈 custom table name
+        verbose_name = "Client Profile"
+        verbose_name_plural = "Clients Profiles"
+
     def __str__(self):
-        return f"{self.user.username}'s profile"
+        return f"{self.user.username}'s profile - ({self.user.email})"
 
 class DreamSetup(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="dreams")
@@ -113,15 +118,33 @@ class AdvisorRequest(models.Model):
     )
 
     def __str__(self):
-        return f"{self.user.username} - {self.full_name or 'No Name'} ({self.advisor_type or 'No Type'})"
+        return f"{self.user.username} as {self.email} for {self.advisor_type} Advisor"
 
 
-class Message(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
-    receiver = models.ForeignKey(Advisor, on_delete=models.CASCADE, related_name="received_messages")
-    content = models.TextField()
+class Appointment(models.Model):
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+    )
+
+    COMMUNICATION_CHOICES = (
+        ("google_meet", "Google Meet"),
+        ("whatsapp", "WhatsApp Video Call"),
+        ("zoom", "Zoom"),
+        ("phone", "Phone Call"),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="appointments")
+    advisor = models.ForeignKey(Advisor, on_delete=models.CASCADE, related_name="appointments")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    
+    # Filled by advisor after accepting
+    preferred_day = models.DateField(null=True, blank=True)
+    preferred_time = models.TimeField(null=True, blank=True)
+    communication_method = models.CharField(max_length=20, choices=COMMUNICATION_CHOICES, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"From {self.sender.username} to {self.receiver.username}"
+        return f"Appointment: {self.user.username} with {self.advisor.user.username} ({self.status})"

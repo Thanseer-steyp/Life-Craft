@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from user.models import Profile,DreamSetup,AdvisorRequest,Message
+from user.models import Profile,DreamSetup,AdvisorRequest,Appointment
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -125,21 +125,6 @@ class AdvisorRequestSerializer(serializers.ModelSerializer):
         return value
 
 
-class MessageSerializer(serializers.ModelSerializer):
-    sender_name = serializers.CharField(source="sender.username", read_only=True)
-    sender_id = serializers.IntegerField(source="sender.id", read_only=True)
-
-    class Meta:
-        model = Message
-        fields = [
-            "id",
-            "sender_id",
-            "sender_name",
-            "receiver",
-            "content",
-            "created_at",
-            "is_read",
-        ]
 
 
 
@@ -171,3 +156,26 @@ class UserSerializer(serializers.ModelSerializer):
             "dreams",
         ]
         read_only_fields = ["id"]
+
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="user.username", read_only=True)
+    advisor_name = serializers.CharField(source="advisor.user.username", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "user",
+            "user_name",
+            "advisor",
+            "advisor_name",
+            "status",
+            "preferred_day",
+            "preferred_time",
+            "communication_method",
+            "created_at",
+        ]
+        read_only_fields = ["id", "status", "created_at"]
+
+

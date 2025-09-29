@@ -16,24 +16,22 @@ export default function AdvisorsPage() {
       .catch((err) => console.error(err));
   }, []);
 
-  const handleSend = async (advisorId) => {
+  const handleBook = async (advisorId) => {
     try {
       await axios.post(
-        "http://localhost:8000/api/v1/user/send-message/",
+        "http://localhost:8000/api/v1/user/book-appointment/",
+        { advisor_id: advisorId },
         {
-          receiver_id: advisorId,
-          content: message,
-        },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
         }
       );
-      alert("Message sent!");
-      setMessage("");
+      alert("Appointment request sent!");
       setSelected(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to send message");
+      alert("Failed to book appointment");
     }
   };
 
@@ -59,15 +57,10 @@ export default function AdvisorsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="bg-white p-6 rounded-xl w-96">
             <h2 className="font-bold text-lg mb-2">
-              Send Message to {selected.username}
+              Book Appointment with {selected.username}
             </h2>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full border rounded-lg p-2 mb-3 text-black"
-              placeholder="Type your message..."
-            />
-            <div className="flex justify-end gap-2">
+            <p>Are you sure you want to request a consultation?</p>
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setSelected(null)}
                 className="px-3 py-1 border rounded-lg"
@@ -75,10 +68,10 @@ export default function AdvisorsPage() {
                 Cancel
               </button>
               <button
-                onClick={() => handleSend(selected.id)}
+                onClick={() => handleBook(selected.id)}
                 className="px-3 py-1 bg-blue-600 text-white rounded-lg"
               >
-                Send
+                Confirm
               </button>
             </div>
           </div>

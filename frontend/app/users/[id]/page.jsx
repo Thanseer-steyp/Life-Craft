@@ -17,7 +17,7 @@ function UserProfilePage() {
       return;
     }
 
-    const url = `http://localhost:8000/api/v1/user/user/${id || ""}`;
+    const url = `http://localhost:8000/api/v1/user/client/${id || ""}`;
   
     axios
       .get(url, { headers: { Authorization: `Bearer ${token}` } })
