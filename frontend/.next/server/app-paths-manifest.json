@@ -1,8 +1,0 @@
-{
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js",
-  "/authentication/page": "app/authentication/page.js",
-  "/booking-appoinment/page": "app/booking-appoinment/page.js",
-  "/advisor-dashboard/page": "app/advisor-dashboard/page.js",
-  "/user-inbox/page": "app/user-inbox/page.js"
-}
