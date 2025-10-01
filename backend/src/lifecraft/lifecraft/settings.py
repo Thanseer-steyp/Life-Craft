@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+import platform
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -90,7 +92,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -129,10 +131,16 @@ SIMPLE_JWT = {
 
 
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "lifecraft.dev@gmail.com"
-EMAIL_HOST_PASSWORD = "kcvz kptl kttq efbq"
-
+if platform.system() != "Windows":   # only enable real email sending on non-Windows
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = "smtp.gmail.com"
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = "lifecraft.dev@gmail.com"
+    EMAIL_HOST_PASSWORD = "vixb wagy dcgx muax"
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
+else:
+    # On Windows (development), don't send actual emails
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    EMAIL_HOST_USER = "lifecraft.dev@gmail.com"
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 

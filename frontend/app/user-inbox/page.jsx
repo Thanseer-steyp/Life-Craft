@@ -47,7 +47,7 @@ function UserDashboard() {
               )}
 
               {appt.status === "declined" && (
-                <p className="text-red-600 mt-2">❌ Your request was declined.</p>
+                <p className="text-red-600 mt-2">message : {appt.decline_message}</p>
               )}
 
               {appt.status === "pending" && (

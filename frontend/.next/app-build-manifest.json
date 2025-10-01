@@ -16,21 +16,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/authentication/page.js"
     ],
-    "/user-inbox/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/user-inbox/page.js"
-    ],
-    "/profile-setup/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/profile-setup/page.js"
-    ],
-    "/dream-setup/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dream-setup/page.js"
-    ],
     "/user-dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -40,6 +25,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/booking-appoinment/page.js"
+    ],
+    "/advisor-dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/advisor-dashboard/page.js"
+    ],
+    "/user-inbox/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/user-inbox/page.js"
     ]
   }
 }

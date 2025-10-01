@@ -174,6 +174,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "preferred_day",
             "preferred_time",
             "communication_method",
+            "decline_message",
             "created_at",
         ]
         read_only_fields = ["id", "status", "created_at"]

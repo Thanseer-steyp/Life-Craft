@@ -144,6 +144,8 @@ class Appointment(models.Model):
     preferred_time = models.TimeField(null=True, blank=True)
     communication_method = models.CharField(max_length=20, choices=COMMUNICATION_CHOICES, null=True, blank=True)
 
+    decline_message = models.TextField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
