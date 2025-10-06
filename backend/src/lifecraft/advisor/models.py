@@ -28,5 +28,5 @@ class Advisor(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.full_name or self.user.username} ({self.email})"
+        return f"{self.full_name or self.user.username} ({self.email}) as {self.advisor_type} advisor"
 
