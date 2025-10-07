@@ -1,8 +1,8 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import ProfileSerializer,UserDashboardSerializer,DreamSetupSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer
-from user.models import AdvisorRequest,DreamSetup,Appointment
+from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer,UserDashboardSerializer
+from user.models import AdvisorRequest,Appointment,Profile
 from rest_framework.permissions import IsAuthenticated
 from advisor.models import Advisor
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -16,18 +16,29 @@ class ProfileSetupView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        profile = getattr(request.user, "profile", None)
-        if profile:
-            serializer = ProfileSerializer(profile)
+        try:
+            profile = request.user.profile
+            serializer = ProfileSerializer(profile, context={"user": request.user})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"detail": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Profile.DoesNotExist:
+            # Return empty/default structure instead of creating a profile
+            return Response(
+                {"message": "Profile not set up yet."}, status=status.HTTP_404_NOT_FOUND
+            )
 
     def post(self, request):
-        serializer = ProfileSerializer(data=request.data)
+        try:
+            profile = request.user.profile
+            serializer = ProfileSerializer(profile, data=request.data, partial=True, context={"user": request.user})
+        except Profile.DoesNotExist:
+            # Create a new profile only when user submits data
+            serializer = ProfileSerializer(data=request.data, context={"user": request.user})
+
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -40,20 +51,6 @@ class UserDashboardView(APIView):
 
 
 
-class DreamSetupView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        dreams = DreamSetup.objects.filter(user=request.user)
-        serializer = DreamSetupSerializer(dreams, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        serializer = DreamSetupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

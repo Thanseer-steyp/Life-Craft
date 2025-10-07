@@ -1,88 +1,86 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from user.models import Profile,DreamSetup,AdvisorRequest,Appointment
+from user.models import Profile,AdvisorRequest,Appointment
+
+
+
+
 
 class ProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
-        fields = ["id", "age", "retirement_age", "bio", "interests", "profile_image"]
-        read_only_fields = ["id"]
+        fields = [
+            "id",
+            "full_name",
+            "username",
+            "email",
+            "dob",
+            "gender",
+            "marital_status",
+            "phone_number",
+            "country",
+            "state",
+            "profile_picture",
+            "interests",
+            "job",
+            "monthly_income",
+            "bio",
+            "retirement_planning_age",
+            "current_savings",
+            "expected_savings_at_retirement",
+            "post_retirement_travel",
+            "post_retirement_hobbies",
+            "post_retirement_family_together",
+            "post_retirement_social_work",
+            "post_retirement_garage",
+            "post_retirement_luxury_life",
+            "retirement_location_preference",
+            "dream_type",
+            "top_dream_1",
+            "top_dream_2",
+            "top_dream_3",
+            "top_dream_priorities",
+            "dream_description",
+            "initial_plan",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at", "full_name", "username", "email"]
 
+    def get_full_name(self, obj):
+        user = self.context.get("user")
+        if user:
+            return user.get_full_name()
+        return None
+    
+    def get_username(self, obj):
+        user = self.context.get("user")
+        if user:
+            return user.username
+        return None
+
+    def get_email(self, obj):
+        user = self.context.get("user")
+        if user:
+            return user.email
+        return None
+    
 
 class UserDashboardSerializer(serializers.ModelSerializer):
-    age = serializers.IntegerField(source="profile.age", read_only=True)
-    retirement_age = serializers.IntegerField(source="profile.retirement_age", read_only=True)
-    bio = serializers.CharField(source="profile.bio", read_only=True)
-    interests = serializers.CharField(source="profile.interests", read_only=True)
-    profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
+    name = serializers.SerializerMethodField()
+    profile = ProfileSerializer(read_only=True)
 
     class Meta:
         model = User
-        fields = [
-            "username",
-            "email",
-            "first_name",
-            "age",
-            "retirement_age",
-            "bio",
-            "interests",
-            "profile_image",
-        ]
+        fields = ["username", "email", "name","profile"]
 
+    def get_name(self, obj):
+        full_name = f"{obj.first_name}"
+        return full_name
 
-class DreamSetupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DreamSetup
-        fields = [
-            "id",
-            "dream_name",
-            "budget",
-            "timeline_months",
-            "current_savings",
-            "description",
-            "created_at",
-        ]
-        read_only_fields = ["id", "created_at"]
-
-class DreamSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DreamSetup
-        fields = [
-            "id",
-            "dream_name",
-            "budget",
-            "timeline_months",
-            "current_savings",
-            "description",
-            "created_at",
-        ]
-        read_only_fields = ["id", "created_at"]
-
-
-class UserDashboardSerializer(serializers.ModelSerializer):
-    # Profile fields
-    age = serializers.IntegerField(source="profile.age", read_only=True)
-    retirement_age = serializers.IntegerField(source="profile.retirement_age", read_only=True)
-    bio = serializers.CharField(source="profile.bio", read_only=True)
-    interests = serializers.CharField(source="profile.interests", read_only=True)
-    profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
-
-    # Nested dreams
-    dreams = DreamSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = User
-        fields = [
-            "username",
-            "email",
-            "first_name",
-            "age",
-            "retirement_age",
-            "bio",
-            "interests",
-            "profile_image",
-            "dreams",
-        ]
 
 
 class AdvisorRequestSerializer(serializers.ModelSerializer):
@@ -139,7 +137,7 @@ class UserSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
 
     # Nested dreams
-    dreams = DreamSerializer(many=True, read_only=True)
+    dreams = ProfileSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
