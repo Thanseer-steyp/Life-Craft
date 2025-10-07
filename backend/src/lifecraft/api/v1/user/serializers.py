@@ -136,8 +136,6 @@ class UserSerializer(serializers.ModelSerializer):
     interests = serializers.CharField(source="profile.interests", read_only=True)
     profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
 
-    # Nested dreams
-    dreams = ProfileSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -151,9 +149,10 @@ class UserSerializer(serializers.ModelSerializer):
             "bio",
             "interests",
             "profile_image",
-            "dreams",
         ]
         read_only_fields = ["id"]
+
+        
 
 
 class AppointmentSerializer(serializers.ModelSerializer):

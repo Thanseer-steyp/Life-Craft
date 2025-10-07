@@ -54,7 +54,7 @@ function BecomeAdvisorForm() {
         .then((res) => {
           setFormData((prev) => ({
             ...prev,
-            full_name: res.data.first_name || res.data.username,
+            full_name: res.data.name,
             email: res.data.email,
           }));
         })
@@ -654,7 +654,7 @@ function BecomeAdvisorForm() {
               <FileInput
                 name="resume"
                 label="Resume/CV"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,image/*"
               />
                                            {/* Government ID Section */}       
                    {" "}

@@ -51,9 +51,6 @@ class UserDashboardView(APIView):
 
 
 
-
-
-
 class AdvisorRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -64,9 +61,13 @@ class AdvisorRequestView(APIView):
     def post(self, request):
         data = request.data.copy()
 
-        # Take full_name & email from user if not given
+        # ✅ Use full_name (not first_name)
         if not data.get("full_name"):
-            data["full_name"] = request.user.get_full_name() or request.user.username
+            # Use first_name + last_name from user if available
+            full_name = f"{request.user.first_name}"
+            data["full_name"] = request.user.first_name
+
+        # ✅ Fix incorrect method call
         if not data.get("email"):
             data["email"] = request.user.email
 
@@ -77,8 +78,6 @@ class AdvisorRequestView(APIView):
                 {"message": "Advisor request submitted successfully"}, status=201
             )
         return Response(serializer.errors, status=400)
-
-
 
 
 
