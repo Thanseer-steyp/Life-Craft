@@ -11,6 +11,7 @@ function AuthPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [resetPassword, setResetPassword] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -24,6 +25,10 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -39,17 +44,20 @@ function AuthPage() {
       // ---------------- Signup Flow ----------------
       if (!isLogin) {
         if (!otpSent) {
-          await axios.post("http://127.0.0.1:8000/api/v1/auth/signup-request/", {
-            username: formData.username,
-            first_name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          });
+          await axios.post(
+            "http://localhost:8000/api/v1/auth/signup-request/",
+            {
+              username: formData.username,
+              first_name: formData.name,
+              email: formData.email,
+              password: formData.password,
+            }
+          );
           setMessage("OTP sent to your email. Enter OTP to verify signup.");
           setOtpSent(true);
         } else {
           await axios.post(
-            "http://127.0.0.1:8000/api/v1/auth/signup-otp-verification/",
+            "http://localhost:8000/api/v1/auth/signup-otp-verification/",
             { email: formData.email, otp: formData.otp }
           );
           setMessage("Signup successful! Please login.");
@@ -62,14 +70,14 @@ function AuthPage() {
       else if (resetPassword) {
         if (!otpSent) {
           await axios.post(
-            "http://127.0.0.1:8000/api/v1/auth/password-reset-otp/",
+            "http://localhost:8000/api/v1/auth/password-reset-otp/",
             { email: formData.email }
           );
           setMessage("OTP sent to your email");
           setOtpSent(true);
         } else {
           await axios.post(
-            "http://127.0.0.1:8000/api/v1/auth/password-reset-confirm/",
+            "http://localhost:8000/api/v1/auth/password-reset-confirm/",
             {
               email: formData.email,
               otp: formData.otp,
@@ -85,13 +93,16 @@ function AuthPage() {
 
       // ---------------- Login with Password ----------------
       else if (isLogin && !useOTP) {
-        const res = await axios.post("http://127.0.0.1:8000/api/v1/auth/login/", {
-          email: formData.email,
-          password: formData.password,
-        });
+        const res = await axios.post(
+          "http://localhost:8000/api/v1/auth/login/",
+          {
+            email: formData.email,
+            password: formData.password,
+          }
+        );
 
-        localStorage.setItem("access", res.data.data.access);
-        localStorage.setItem("refresh", res.data.data.refresh);
+        const accessToken = res.data.data.access;
+        const refreshToken = res.data.data.refresh;
 
         // 🔹 Admin check
         if (formData.email === "admin.lifecraft@gmail.com") {
@@ -99,9 +110,9 @@ function AuthPage() {
         } else {
           // 🔹 Advisor check
           const advisorRes = await axios.get(
-            "http://127.0.0.1:8000/api/v1/advisor/advisors-list/",
+            "http://localhost:8000/api/v1/advisor/advisors-list/",
             {
-              headers: { Authorization: `Bearer ${res.data.data.access}` },
+              headers: { Authorization: `Bearer ${accessToken}` },
             }
           );
 
@@ -121,7 +132,7 @@ function AuthPage() {
       else if (isLogin && useOTP) {
         if (!otpSent) {
           await axios.post(
-            "http://127.0.0.1:8000/api/v1/auth/login-otp-request/",
+            "http://localhost:8000/api/v1/auth/login-otp-request/",
             {
               email: formData.email,
             }
@@ -130,12 +141,12 @@ function AuthPage() {
           setOtpSent(true);
         } else {
           const res = await axios.post(
-            "http://127.0.0.1:8000/api/v1/auth/login-otp-verification/",
+            "http://localhost:8000/api/v1/auth/login-otp-verification/",
             { email: formData.email, otp: formData.otp }
           );
 
-          localStorage.setItem("access", res.data.data.access);
-          localStorage.setItem("refresh", res.data.data.refresh);
+          const accessToken = res.data.data.access;
+          const refreshToken = res.data.data.refresh;
 
           // 🔹 Admin check
           if (formData.email === "admin.lifecraft@gmail.com") {
@@ -143,9 +154,9 @@ function AuthPage() {
           } else {
             // 🔹 Advisor check
             const advisorRes = await axios.get(
-              "http://127.0.0.1:8000/api/v1/advisor/advisors-list/",
+              "http://localhost:8000/api/v1/advisor/advisors-list/",
               {
-                headers: { Authorization: `Bearer ${res.data.data.access}` },
+                headers: { Authorization: `Bearer ${accessToken}` },
               }
             );
 
@@ -173,15 +184,15 @@ function AuthPage() {
     try {
       let url = "";
       if (!isLogin)
-        url = "http://127.0.0.1:8000/api/v1/auth/signup-otp-resend/";
+        url = "http://localhost:8000/api/v1/auth/signup-otp-resend/";
       else if (useOTP || resetPassword)
         url = useOTP
-          ? "http://127.0.0.1:8000/api/v1/auth/login-otp-request/"
-          : "http://127.0.0.1:8000/api/v1/auth/password-reset-otp/";
+          ? "http://localhost:8000/api/v1/auth/login-otp-request/"
+          : "http://localhost:8000/api/v1/auth/password-reset-otp/";
 
       await axios.post(url, { email: formData.email });
       setMessage("OTP resent successfully");
-      setFormData({ ...formData, otp: "" }); // clear input
+      setFormData({ ...formData, otp: "" });
       setCooldown(30);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to resend OTP");
@@ -196,267 +207,551 @@ function AuthPage() {
   }, [cooldown]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md relative">
-        <h2 className="text-2xl font-bold mb-6 text-center text-black">
-          {isLogin
-            ? resetPassword
-              ? "Reset Password"
-              : useOTP
-              ? "Login with OTP"
-              : "Login with Password"
-            : "Signup"}
-        </h2>
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <style>{`
+        @keyframes fadeInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
 
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {message && (
-          <p className="text-green-600 text-center mb-4">{message}</p>
-        )}
+        @keyframes fadeInRight {
+          from {
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ---------------- Signup Form ---------------- */}
-          {!isLogin && (
-            <>
-              <input
-                type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-                disabled={otpSent}
-              />
-              <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-                disabled={otpSent}
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Email Address"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-                disabled={otpSent}
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-                disabled={otpSent}
-              />
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-              {otpSent && (
-                <input
-                  type="text"
-                  name="otp"
-                  placeholder="Enter OTP"
-                  value={formData.otp}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-lg text-black"
-                  required
-                />
-              )}
-            </>
-          )}
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
 
-          {/* ---------------- Reset Password ---------------- */}
-          {resetPassword && (
-            <>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email Address"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-                disabled={otpSent}
-              />
-              {otpSent && (
-                <>
-                  <input
-                    type="text"
-                    name="otp"
-                    placeholder="Enter OTP"
-                    value={formData.otp}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-lg text-black"
-                    required
-                  />
-                  <input
-                    type="password"
-                    name="newPassword"
-                    placeholder="New Password"
-                    value={formData.newPassword}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-lg text-black"
-                    required
-                  />
-                </>
-              )}
-            </>
-          )}
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
 
-          {/* ---------------- Login ---------------- */}
-          {isLogin && !resetPassword && (
-            <>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email Address"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg text-black"
-                required
-                disabled={otpSent && useOTP}
-              />
-              {!useOTP && (
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-lg text-black"
-                  required
-                />
-              )}
-              {useOTP && otpSent && (
-                <input
-                  type="text"
-                  name="otp"
-                  placeholder="Enter OTP"
-                  value={formData.otp}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-lg text-black"
-                  required
-                />
-              )}
-            </>
-          )}
+        .animate-fadeInLeft {
+          animation: fadeInLeft 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-          {/* ---------------- Submit Button ---------------- */}
-          <button
-            type="submit"
-            className="w-full p-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition"
-            disabled={loading}
-          >
-            {loading
-              ? "Please wait..."
-              : !isLogin
-              ? otpSent
-                ? "Verify OTP"
-                : "Send OTP"
-              : resetPassword
-              ? otpSent
-                ? "Confirm Reset"
-                : "Send OTP"
-              : useOTP
-              ? otpSent
-                ? "Verify OTP"
-                : "Send OTP"
-              : "Login"}
-          </button>
+        .animate-fadeInRight {
+          animation: fadeInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-          {/* ---------------- Resend OTP ---------------- */}
-          {otpSent && (!isLogin || useOTP || resetPassword) && (
-            <div className="mt-3 text-center">
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={cooldown > 0}
-                className={`text-sm font-semibold ${
-                  cooldown > 0
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "text-blue-600 hover:underline"
-                }`}
-              >
-                {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}
-              </button>
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .input-focus {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-focus:focus {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(51, 65, 85, 0.15);
+        }
+
+        .btn-hover {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .btn-hover::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+          transition: left 0.5s;
+        }
+
+        .btn-hover:hover::before {
+          left: 100%;
+        }
+
+        .btn-hover:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .link-hover {
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .link-hover::after {
+          content: '';
+          position: absolute;
+          width: 0;
+          height: 2px;
+          bottom: -2px;
+          left: 50%;
+          background-color: currentColor;
+          transition: all 0.3s ease;
+          transform: translateX(-50%);
+        }
+
+        .link-hover:hover::after {
+          width: 100%;
+        }
+
+        .field-group {
+          animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        }
+
+        .field-group:nth-child(1) { animation-delay: 0.1s; }
+        .field-group:nth-child(2) { animation-delay: 0.15s; }
+        .field-group:nth-child(3) { animation-delay: 0.2s; }
+        .field-group:nth-child(4) { animation-delay: 0.25s; }
+        .field-group:nth-child(5) { animation-delay: 0.3s; }
+
+        .stat-card {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
+
+      {/* Left Side - Brand & Information */}
+      <div className={`hidden lg:flex lg:w-1/2 p-12 flex-col justify-between ${mounted ? 'animate-fadeInRight' : 'opacity-0'}`}>
+        <div>
+          {/* Logo */}
+          <div className="flex items-center space-x-3 mb-16">
+            <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center border border-slate-600">
+              <svg className="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
             </div>
-          )}
-        </form>
-
-        {/* ---------------- Footer Links ---------------- */}
-        {isLogin && !resetPassword && (
-          <p className="mt-4 text-center text-gray-600">
-            <button
-              onClick={() => {
-                setResetPassword(true);
-                setOtpSent(false);
-                setError("");
-                setMessage("");
-              }}
-              className="text-orange-600 font-semibold hover:underline"
-            >
-              Forgot Password?
-            </button>
-          </p>
-        )}
-
-        <p className="mt-2 text-center text-gray-600">
-          {isLogin ? (
-            <>
-              Don't have an account?{" "}
-              <button
-                onClick={() => {
-                  setIsLogin(false);
-                  setOtpSent(false);
-                  setError("");
-                  setMessage("");
-                }}
-                className="text-blue-600 font-semibold hover:underline"
-              >
-                Signup
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <button
-                onClick={() => {
-                  setIsLogin(true);
-                  setOtpSent(false);
-                  setError("");
-                  setMessage("");
-                }}
-                className="text-blue-600 font-semibold hover:underline"
-              >
-                Login
-              </button>
-            </>
-          )}
-        </p>
-
-        {/* ---------------- Toggle password vs OTP login ---------------- */}
-        {isLogin && !resetPassword && (
-          <div className="mt-2 text-center">
-            <button
-              onClick={() => {
-                setUseOTP(!useOTP);
-                setOtpSent(false);
-                setError("");
-                setMessage("");
-              }}
-              className="text-sm text-purple-600 font-semibold hover:underline"
-            >
-              {useOTP ? "Login with Password" : "Login with OTP"}
-            </button>
+            <span className="text-2xl font-serif font-bold text-white tracking-wider">LIFECRAFT</span>
           </div>
-        )}
+
+          {/* Main Content */}
+          <div className="max-w-lg">
+            <h1 className="text-5xl font-serif font-bold text-white mb-6 leading-tight">
+              Secure Your<br />Retirement Future
+            </h1>
+            <p className="text-xl text-slate-300 mb-12 leading-relaxed">
+              Expert financial planning and advisory services to help you navigate your retirement journey with confidence and peace of mind.
+            </p>
+
+            {/* Feature Points */}
+            <div className="space-y-6 mb-12">
+              <div className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-1">Personalized Planning</h3>
+                  <p className="text-slate-400">Tailored retirement strategies designed specifically for your financial goals and lifestyle.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-1">Expert Advisors</h3>
+                  <p className="text-slate-400">Connect with certified financial advisors who specialize in retirement planning.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-1">Real-Time Insights</h3>
+                  <p className="text-slate-400">Track your retirement progress with comprehensive analytics and reporting tools.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6">
+              <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <div className="text-3xl font-bold text-white mb-1">10K+</div>
+                <div className="text-slate-400 text-sm">Happy Clients</div>
+              </div>
+              <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <div className="text-3xl font-bold text-white mb-1">$2B+</div>
+                <div className="text-slate-400 text-sm">Assets Managed</div>
+              </div>
+              <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <div className="text-3xl font-bold text-white mb-1">15+</div>
+                <div className="text-slate-400 text-sm">Years Experience</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-slate-500 text-sm">
+          © 2025 LifeCraft. All rights reserved. | Secure authentication system.
+        </div>
+      </div>
+
+      {/* Right Side - Authentication Form */}
+      <div className={`w-full lg:w-1/2 flex items-center justify-center p-8 ${mounted ? 'animate-fadeInLeft' : 'opacity-0'}`}>
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-slate-800 rounded-lg mb-3">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-wide">LIFECRAFT</h1>
+          </div>
+
+          {/* Auth Card */}
+          <div className="bg-white shadow-xl rounded-2xl border border-slate-200">
+            <div className="px-8 py-10">
+              <h2 className="text-3xl font-serif font-semibold mb-2 text-slate-900">
+                {isLogin
+                  ? resetPassword
+                    ? "Reset Password"
+                    : useOTP
+                    ? "Login with OTP"
+                    : "Welcome Back"
+                  : "Get Started"}
+              </h2>
+              <p className="text-slate-600 mb-8">
+                {isLogin
+                  ? resetPassword
+                    ? "Enter your email to receive a reset code"
+                    : "Sign in to access your retirement planning dashboard"
+                  : "Create your account to begin your retirement journey"}
+              </p>
+
+              {/* Alert Messages */}
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg animate-slideDown">
+                  <p className="text-red-700 text-sm font-medium">{error}</p>
+                </div>
+              )}
+              {message && (
+                <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-lg animate-slideDown">
+                  <p className="text-emerald-700 text-sm font-medium">{message}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Signup Form */}
+                {!isLogin && (
+                  <>
+                    <div className="field-group">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                        required
+                        disabled={otpSent}
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                        required
+                        disabled={otpSent}
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                        required
+                        disabled={otpSent}
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                        required
+                        disabled={otpSent}
+                      />
+                    </div>
+                    {otpSent && (
+                      <div className="field-group animate-scaleIn">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">One-Time Password</label>
+                        <input
+                          type="text"
+                          name="otp"
+                          value={formData.otp}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Reset Password */}
+                {resetPassword && (
+                  <>
+                    <div className="field-group">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                        required
+                        disabled={otpSent}
+                      />
+                    </div>
+                    {otpSent && (
+                      <>
+                        <div className="field-group animate-scaleIn">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">One-Time Password</label>
+                          <input
+                            type="text"
+                            name="otp"
+                            value={formData.otp}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                            required
+                          />
+                        </div>
+                        <div className="field-group animate-scaleIn">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">New Password</label>
+                          <input
+                            type="password"
+                            name="newPassword"
+                            value={formData.newPassword}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Login */}
+                {isLogin && !resetPassword && (
+                  <>
+                    <div className="field-group">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                        required
+                        disabled={otpSent && useOTP}
+                      />
+                    </div>
+                    {!useOTP && (
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                        />
+                      </div>
+                    )}
+                    {useOTP && otpSent && (
+                      <div className="field-group animate-scaleIn">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">One-Time Password</label>
+                        <input
+                          type="text"
+                          name="otp"
+                          value={formData.otp}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed btn-hover"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : !isLogin ? (
+                    otpSent ? "Verify OTP" : "Send Verification Code"
+                  ) : resetPassword ? (
+                    otpSent ? "Confirm Reset" : "Send Reset Code"
+                  ) : useOTP ? (
+                    otpSent ? "Verify OTP" : "Send Login Code"
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+
+                {/* Resend OTP */}
+                {otpSent && (!isLogin || useOTP || resetPassword) && (
+                  <div className="text-center pt-2 animate-slideDown">
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={cooldown > 0}
+                      className={`text-sm font-medium link-hover ${
+                        cooldown > 0
+                          ? "text-slate-400 cursor-not-allowed"
+                          : "text-slate-700 hover:text-slate-900"
+                      }`}
+                    >
+                      {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend verification code"}
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+
+            {/* Footer Links */}
+            <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 rounded-b-2xl">
+              {isLogin && !resetPassword && (
+                <div className="text-center mb-3">
+                  <button
+                    onClick={() => {
+                      setResetPassword(true);
+                      setOtpSent(false);
+                      setError("");
+                      setMessage("");
+                    }}
+                    className="text-sm text-slate-600 hover:text-slate-900 font-medium link-hover"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
+
+<div className="text-center text-sm text-slate-600">
+                {isLogin ? (
+                  <>
+                    Don't have an account?{" "}
+                    <button
+                      onClick={() => {
+                        setIsLogin(false);
+                        setOtpSent(false);
+                        setError("");
+                        setMessage("");
+                      }}
+                      className="text-slate-900 font-semibold link-hover"
+                    >
+                      Create one now
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{" "}
+                    <button
+                      onClick={() => {
+                        setIsLogin(true);
+                        setOtpSent(false);
+                        setError("");
+                        setMessage("");
+                      }}
+                      className="text-slate-900 font-semibold link-hover"
+                    >
+                      Sign in
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Toggle password vs OTP login */}
+              {isLogin && !resetPassword && (
+                <div className="text-center mt-3 pt-3 border-t border-slate-200">
+                  <button
+                    onClick={() => {
+                      setUseOTP(!useOTP);
+                      setOtpSent(false);
+                      setError("");
+                      setMessage("");
+                    }}
+                    className="text-sm text-slate-600 hover:text-slate-900 font-medium link-hover"
+                  >
+                    {useOTP ? "Use password instead" : "Use one-time password"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
