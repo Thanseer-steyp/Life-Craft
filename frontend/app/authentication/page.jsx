@@ -207,8 +207,9 @@ function AuthPage() {
   }, [cooldown]);
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <style>{`
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="h-max flex wrapper">
+        <style>{`
         @keyframes fadeInLeft {
           from {
             opacity: 0;
@@ -350,223 +351,278 @@ function AuthPage() {
         }
       `}</style>
 
-      {/* Left Side - Brand & Information */}
-      <div className={`hidden lg:flex lg:w-1/2 p-12 flex-col justify-between ${mounted ? 'animate-fadeInRight' : 'opacity-0'}`}>
-        <div>
-          {/* Logo */}
-          <div className="flex items-center space-x-3 mb-16">
-            <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center border border-slate-600">
-              <svg className="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <span className="text-2xl font-serif font-bold text-white tracking-wider">LIFECRAFT</span>
-          </div>
-
-          {/* Main Content */}
-          <div className="max-w-lg">
-            <h1 className="text-5xl font-serif font-bold text-white mb-6 leading-tight">
-              Secure Your<br />Retirement Future
-            </h1>
-            <p className="text-xl text-slate-300 mb-12 leading-relaxed">
-              Expert financial planning and advisory services to help you navigate your retirement journey with confidence and peace of mind.
-            </p>
-
-            {/* Feature Points */}
-            <div className="space-y-6 mb-12">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
-                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold text-lg mb-1">Personalized Planning</h3>
-                  <p className="text-slate-400">Tailored retirement strategies designed specifically for your financial goals and lifestyle.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
-                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold text-lg mb-1">Expert Advisors</h3>
-                  <p className="text-slate-400">Connect with certified financial advisors who specialize in retirement planning.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
-                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold text-lg mb-1">Real-Time Insights</h3>
-                  <p className="text-slate-400">Track your retirement progress with comprehensive analytics and reporting tools.</p>
-                </div>
+        {/* Left Side - Brand & Information */}
+        <div
+          className={`hidden lg:flex lg:w-1/2 p-12 pl-0 flex-col justify-between ${
+            mounted ? "animate-fadeInRight" : "opacity-0"
+          }`}
+        >
+          <div>
+            {/* Logo */}
+            <div className="flex items-center space-x-3 mb-5">
+              <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center border border-slate-600">
+                <svg
+                  className="w-7 h-7 text-slate-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                <div className="text-3xl font-bold text-white mb-1">10K+</div>
-                <div className="text-slate-400 text-sm">Happy Clients</div>
-              </div>
-              <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                <div className="text-3xl font-bold text-white mb-1">$2B+</div>
-                <div className="text-slate-400 text-sm">Assets Managed</div>
-              </div>
-              <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                <div className="text-3xl font-bold text-white mb-1">15+</div>
-                <div className="text-slate-400 text-sm">Years Experience</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-slate-500 text-sm">
-          © 2025 LifeCraft. All rights reserved. | Secure authentication system.
-        </div>
-      </div>
-
-      {/* Right Side - Authentication Form */}
-      <div className={`w-full lg:w-1/2 flex items-center justify-center p-8 ${mounted ? 'animate-fadeInLeft' : 'opacity-0'}`}>
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-slate-800 rounded-lg mb-3">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-wide">LIFECRAFT</h1>
-          </div>
-
-          {/* Auth Card */}
-          <div className="bg-white shadow-xl rounded-2xl border border-slate-200">
-            <div className="px-8 py-10">
-              <h2 className="text-3xl font-serif font-semibold mb-2 text-slate-900">
-                {isLogin
-                  ? resetPassword
-                    ? "Reset Password"
-                    : useOTP
-                    ? "Login with OTP"
-                    : "Welcome Back"
-                  : "Get Started"}
-              </h2>
-              <p className="text-slate-600 mb-8">
-                {isLogin
-                  ? resetPassword
-                    ? "Enter your email to receive a reset code"
-                    : "Sign in to access your retirement planning dashboard"
-                  : "Create your account to begin your retirement journey"}
+            {/* Main Content */}
+            <div className="max-w-lg">
+              <h1 className="text-5xl font-serif font-bold text-white mb-6 leading-tight">
+                Secure Your
+                <br />
+                Retirement Future
+              </h1>
+              <p className="text-xl text-slate-300 mb-12 leading-relaxed">
+                Expert financial planning and advisory services to help you
+                navigate your retirement journey with confidence and peace of
+                mind.
               </p>
 
-              {/* Alert Messages */}
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg animate-slideDown">
-                  <p className="text-red-700 text-sm font-medium">{error}</p>
+              {/* Feature Points */}
+              <div className="space-y-6 mb-12">
+                <div className="flex items-start space-x-4">
+                  <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
+                    <svg
+                      className="w-5 h-5 text-emerald-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg mb-1">
+                      Personalized Planning
+                    </h3>
+                    <p className="text-slate-400">
+                      Tailored retirement strategies designed specifically for
+                      your financial goals and lifestyle.
+                    </p>
+                  </div>
                 </div>
-              )}
-              {message && (
-                <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-lg animate-slideDown">
-                  <p className="text-emerald-700 text-sm font-medium">{message}</p>
-                </div>
-              )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Signup Form */}
-                {!isLogin && (
-                  <>
-                    <div className="field-group">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                        required
-                        disabled={otpSent}
+                <div className="flex items-start space-x-4">
+                  <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
+                    <svg
+                      className="w-5 h-5 text-emerald-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                       />
-                    </div>
-                    <div className="field-group">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                        required
-                        disabled={otpSent}
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg mb-1">
+                      Expert Advisors
+                    </h3>
+                    <p className="text-slate-400">
+                      Connect with certified financial advisors who specialize
+                      in retirement planning.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-4">
+                  <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
+                    <svg
+                      className="w-5 h-5 text-emerald-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
                       />
-                    </div>
-                    <div className="field-group">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                        required
-                        disabled={otpSent}
-                      />
-                    </div>
-                    <div className="field-group">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                        required
-                        disabled={otpSent}
-                      />
-                    </div>
-                    {otpSent && (
-                      <div className="field-group animate-scaleIn">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">One-Time Password</label>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg mb-1">
+                      Real-Time Insights
+                    </h3>
+                    <p className="text-slate-400">
+                      Track your retirement progress with comprehensive
+                      analytics and reporting tools.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-6">
+                <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <div className="text-3xl font-bold text-white mb-1">10K+</div>
+                  <div className="text-slate-400 text-sm">Happy Clients</div>
+                </div>
+                <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <div className="text-3xl font-bold text-white mb-1">$2B+</div>
+                  <div className="text-slate-400 text-sm">Assets Managed</div>
+                </div>
+                <div className="stat-card bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <div className="text-3xl font-bold text-white mb-1">15+</div>
+                  <div className="text-slate-400 text-sm">Years Experience</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+        </div>
+
+        {/* Right Side - Authentication Form */}
+        <div
+          className={`w-full lg:w-1/2 flex items-center justify-end p-8 pr-0 ${
+            mounted ? "animate-fadeInLeft" : "opacity-0"
+          }`}
+        >
+          <div className="w-full max-w-md">
+            {/* Mobile Logo */}
+            <div className="lg:hidden text-center mb-8">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-slate-800 rounded-lg mb-3">
+                <svg
+                  className="w-7 h-7 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-wide">
+                LIFECRAFT
+              </h1>
+            </div>
+
+            {/* Auth Card */}
+            <div className="bg-white shadow-xl rounded-2xl border border-slate-200">
+              <div className="px-8 py-10">
+                <h2 className="text-3xl font-serif font-semibold mb-2 text-slate-900">
+                  {isLogin
+                    ? resetPassword
+                      ? "Reset Password"
+                      : useOTP
+                      ? "Login with OTP"
+                      : "Welcome Back"
+                    : "Get Started"}
+                </h2>
+                <p className="text-slate-600 mb-8">
+                  {isLogin
+                    ? resetPassword
+                      ? "Enter your email to receive a reset code"
+                      : "Sign in to access your retirement planning dashboard"
+                    : "Create your account to begin your retirement journey"}
+                </p>
+
+                {/* Alert Messages */}
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg animate-slideDown">
+                    <p className="text-red-700 text-sm font-medium">{error}</p>
+                  </div>
+                )}
+                {message && (
+                  <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-lg animate-slideDown">
+                    <p className="text-emerald-700 text-sm font-medium">
+                      {message}
+                    </p>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Signup Form */}
+                  {!isLogin && (
+                    <>
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Full Name
+                        </label>
                         <input
                           type="text"
-                          name="otp"
-                          value={formData.otp}
+                          name="name"
+                          value={formData.name}
                           onChange={handleChange}
                           className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
                           required
+                          disabled={otpSent}
                         />
                       </div>
-                    )}
-                  </>
-                )}
-
-                {/* Reset Password */}
-                {resetPassword && (
-                  <>
-                    <div className="field-group">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                        required
-                        disabled={otpSent}
-                      />
-                    </div>
-                    {otpSent && (
-                      <>
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Username
+                        </label>
+                        <input
+                          type="text"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                          disabled={otpSent}
+                        />
+                      </div>
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                          disabled={otpSent}
+                        />
+                      </div>
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                          disabled={otpSent}
+                        />
+                      </div>
+                      {otpSent && (
                         <div className="field-group animate-scaleIn">
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">One-Time Password</label>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            One-Time Password
+                          </label>
                           <input
                             type="text"
                             name="otp"
@@ -576,179 +632,259 @@ function AuthPage() {
                             required
                           />
                         </div>
-                        <div className="field-group animate-scaleIn">
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">New Password</label>
+                      )}
+                    </>
+                  )}
+
+                  {/* Reset Password */}
+                  {resetPassword && (
+                    <>
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                          disabled={otpSent}
+                        />
+                      </div>
+                      {otpSent && (
+                        <>
+                          <div className="field-group animate-scaleIn">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                              One-Time Password
+                            </label>
+                            <input
+                              type="text"
+                              name="otp"
+                              value={formData.otp}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                              required
+                            />
+                          </div>
+                          <div className="field-group animate-scaleIn">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                              New Password
+                            </label>
+                            <input
+                              type="password"
+                              name="newPassword"
+                              value={formData.newPassword}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                              required
+                            />
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* Login */}
+                  {isLogin && !resetPassword && (
+                    <>
+                      <div className="field-group">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                          required
+                          disabled={otpSent && useOTP}
+                        />
+                      </div>
+                      {!useOTP && (
+                        <div className="field-group">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Password
+                          </label>
                           <input
                             type="password"
-                            name="newPassword"
-                            value={formData.newPassword}
+                            name="password"
+                            value={formData.password}
                             onChange={handleChange}
                             className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
                             required
                           />
                         </div>
-                      </>
-                    )}
-                  </>
-                )}
-
-                {/* Login */}
-                {isLogin && !resetPassword && (
-                  <>
-                    <div className="field-group">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                        required
-                        disabled={otpSent && useOTP}
-                      />
-                    </div>
-                    {!useOTP && (
-                      <div className="field-group">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                        <input
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                          required
-                        />
-                      </div>
-                    )}
-                    {useOTP && otpSent && (
-                      <div className="field-group animate-scaleIn">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">One-Time Password</label>
-                        <input
-                          type="text"
-                          name="otp"
-                          value={formData.otp}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                          required
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed btn-hover"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : !isLogin ? (
-                    otpSent ? "Verify OTP" : "Send Verification Code"
-                  ) : resetPassword ? (
-                    otpSent ? "Confirm Reset" : "Send Reset Code"
-                  ) : useOTP ? (
-                    otpSent ? "Verify OTP" : "Send Login Code"
-                  ) : (
-                    "Sign In"
+                      )}
+                      {useOTP && otpSent && (
+                        <div className="field-group animate-scaleIn">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            One-Time Password
+                          </label>
+                          <input
+                            type="text"
+                            name="otp"
+                            value={formData.otp}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                            required
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
-                </button>
 
-                {/* Resend OTP */}
-                {otpSent && (!isLogin || useOTP || resetPassword) && (
-                  <div className="text-center pt-2 animate-slideDown">
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed btn-hover"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center">
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : !isLogin ? (
+                      otpSent ? (
+                        "Verify OTP"
+                      ) : (
+                        "Send Verification Code"
+                      )
+                    ) : resetPassword ? (
+                      otpSent ? (
+                        "Confirm Reset"
+                      ) : (
+                        "Send Reset Code"
+                      )
+                    ) : useOTP ? (
+                      otpSent ? (
+                        "Verify OTP"
+                      ) : (
+                        "Send Login Code"
+                      )
+                    ) : (
+                      "Sign In"
+                    )}
+                  </button>
+
+                  {/* Resend OTP */}
+                  {otpSent && (!isLogin || useOTP || resetPassword) && (
+                    <div className="text-center pt-2 animate-slideDown">
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        disabled={cooldown > 0}
+                        className={`text-sm font-medium link-hover ${
+                          cooldown > 0
+                            ? "text-slate-400 cursor-not-allowed"
+                            : "text-slate-700 hover:text-slate-900"
+                        }`}
+                      >
+                        {cooldown > 0
+                          ? `Resend code in ${cooldown}s`
+                          : "Resend verification code"}
+                      </button>
+                    </div>
+                  )}
+                </form>
+              </div>
+
+              {/* Footer Links */}
+              <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 rounded-b-2xl">
+                {isLogin && !resetPassword && (
+                  <div className="text-center mb-3">
                     <button
-                      type="button"
-                      onClick={handleResend}
-                      disabled={cooldown > 0}
-                      className={`text-sm font-medium link-hover ${
-                        cooldown > 0
-                          ? "text-slate-400 cursor-not-allowed"
-                          : "text-slate-700 hover:text-slate-900"
-                      }`}
+                      onClick={() => {
+                        setResetPassword(true);
+                        setOtpSent(false);
+                        setError("");
+                        setMessage("");
+                      }}
+                      className="text-sm text-slate-600 hover:text-slate-900 font-medium link-hover"
                     >
-                      {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend verification code"}
+                      Forgot your password?
                     </button>
                   </div>
                 )}
-              </form>
-            </div>
 
-            {/* Footer Links */}
-            <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 rounded-b-2xl">
-              {isLogin && !resetPassword && (
-                <div className="text-center mb-3">
-                  <button
-                    onClick={() => {
-                      setResetPassword(true);
-                      setOtpSent(false);
-                      setError("");
-                      setMessage("");
-                    }}
-                    className="text-sm text-slate-600 hover:text-slate-900 font-medium link-hover"
-                  >
-                    Forgot your password?
-                  </button>
+                <div className="text-center text-sm text-slate-600">
+                  {isLogin ? (
+                    <>
+                      Don't have an account?{" "}
+                      <button
+                        onClick={() => {
+                          setIsLogin(false);
+                          setOtpSent(false);
+                          setError("");
+                          setMessage("");
+                        }}
+                        className="text-slate-900 font-semibold link-hover"
+                      >
+                        Create one now
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{" "}
+                      <button
+                        onClick={() => {
+                          setIsLogin(true);
+                          setOtpSent(false);
+                          setError("");
+                          setMessage("");
+                        }}
+                        className="text-slate-900 font-semibold link-hover"
+                      >
+                        Sign in
+                      </button>
+                    </>
+                  )}
                 </div>
-              )}
 
-<div className="text-center text-sm text-slate-600">
-                {isLogin ? (
-                  <>
-                    Don't have an account?{" "}
+                {/* Toggle password vs OTP login */}
+                {isLogin && !resetPassword && (
+                  <div className="text-center mt-3 pt-3 border-t border-slate-200">
                     <button
                       onClick={() => {
-                        setIsLogin(false);
+                        setUseOTP(!useOTP);
                         setOtpSent(false);
                         setError("");
                         setMessage("");
                       }}
-                      className="text-slate-900 font-semibold link-hover"
+                      className="text-sm text-slate-600 hover:text-slate-900 font-medium link-hover"
                     >
-                      Create one now
+                      {useOTP
+                        ? "Use password instead"
+                        : "Use one-time password"}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    Already have an account?{" "}
-                    <button
-                      onClick={() => {
-                        setIsLogin(true);
-                        setOtpSent(false);
-                        setError("");
-                        setMessage("");
-                      }}
-                      className="text-slate-900 font-semibold link-hover"
-                    >
-                      Sign in
-                    </button>
-                  </>
+                  </div>
                 )}
               </div>
-
-              {/* Toggle password vs OTP login */}
-              {isLogin && !resetPassword && (
-                <div className="text-center mt-3 pt-3 border-t border-slate-200">
-                  <button
-                    onClick={() => {
-                      setUseOTP(!useOTP);
-                      setOtpSent(false);
-                      setError("");
-                      setMessage("");
-                    }}
-                    className="text-sm text-slate-600 hover:text-slate-900 font-medium link-hover"
-                  >
-                    {useOTP ? "Use password instead" : "Use one-time password"}
-                  </button>
-                </div>
-              )}
+            </div>
+            <div className="text-slate-500 text-sm mt-4 text-center">
+              © 2025 LifeCraft. All rights reserved. | Secure authentication
+              system.
             </div>
           </div>
         </div>

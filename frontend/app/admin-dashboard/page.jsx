@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Users,
   UserCheck,
@@ -21,62 +22,82 @@ function AdminDashboard() {
     const token = localStorage.getItem("access");
     if (!token) return;
 
-    fetch("http://localhost:8000/api/v1/admin/advisor-requests/", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setRequests(data))
-      .catch((err) => console.error(err));
+    axios
+      .get("http://localhost:8000/api/v1/admin/advisor-requests/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        setRequests(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching advisor requests:", err);
+      });
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/user/clients-list/")
-      .then((res) => res.json())
-      .then((data) => setUsers(data))
-      .catch((err) => console.error("Error fetching users:", err));
+    axios
+      .get("http://localhost:8000/api/v1/user/clients-list/")
+      .then((res) => {
+        setUsers(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+      });
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/advisor/advisors-list/")
-      .then((res) => res.json())
-      .then((data) => setAdvisors(data))
-      .catch((err) => console.error("Error fetching advisors:", err));
+    axios
+      .get("http://localhost:8000/api/v1/advisor/advisors-list/")
+      .then((res) => {
+        setAdvisors(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching advisors:", err);
+      });
   }, []);
 
-  const handleAction = (id, action) => {
+  const handleAction = async (id, action) => {
     const token = localStorage.getItem("access");
     setLoading(true);
-
-    fetch("http://localhost:8000/api/v1/admin/advisor-requests/", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id, action }),
-    })
-      .then(() => {
-        const updatedRequests = requests.filter((r) => r.id !== id);
-        setRequests(updatedRequests);
-
-        const affectedRequest = requests.find((r) => r.id === id);
-
-        if (action === "accept" && affectedRequest) {
-          setAdvisors((prev) => [...prev, affectedRequest]);
-          setUsers((prev) =>
-            prev.filter((u) => u.email !== affectedRequest.email)
-          );
+  
+    try {
+      await axios.post(
+        "http://localhost:8000/api/v1/admin/advisor-requests/",
+        { id, action },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      );
+  
+      // Update local state after successful action
+      const updatedRequests = requests.filter((r) => r.id !== id);
+      setRequests(updatedRequests);
+  
+      const affectedRequest = requests.find((r) => r.id === id);
+  
+      if (action === "accept" && affectedRequest) {
+        setAdvisors((prev) => [...prev, affectedRequest]);
+        setUsers((prev) =>
+          prev.filter((u) => u.email !== affectedRequest.email)
+        );
+      }
+    } catch (err) {
+      console.error("Error updating advisor request:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="wrapper py-6 px-1.5">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -92,7 +113,7 @@ function AdminDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="wrapper py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-purple-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -104,7 +125,9 @@ function AdminDashboard() {
                 {requests.length}
               </span>
             </div>
-            <h3 className="text-gray-600 font-medium">Pending Advisor Requests</h3>
+            <h3 className="text-gray-600 font-medium">
+              Pending Advisor Requests
+            </h3>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -241,9 +264,7 @@ function AdminDashboard() {
             {users.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">
-                  No users registered yet
-                </p>
+                <p className="text-gray-500 text-lg">No users registered yet</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -299,11 +320,9 @@ function AdminDashboard() {
                         <p className="text-gray-800 font-semibold">
                           {advisor.full_name}
                         </p>
-                        <p className="text-gray-500 text-sm">
-                          {advisor.email}
-                        </p>
+                        <p className="text-gray-500 text-sm">{advisor.email}</p>
                         <p className="text-gray-500 text-sm capitalize">
-                          {advisor.advisor_type}  Advisor
+                          {advisor.advisor_type} Advisor
                         </p>
                       </div>
                     </div>
