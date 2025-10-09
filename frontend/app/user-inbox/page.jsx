@@ -3,6 +3,12 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 function UserDashboard() {
+  const COMMUNICATION_LABELS = {
+    google_meet: "Google Meet",
+    whatsapp_video_call: "WhatsApp Video Call",
+    zoom: "Zoom",
+    phone_call: "Phone Call",
+  };
   const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
@@ -10,7 +16,10 @@ function UserDashboard() {
       .get("http://localhost:8000/api/v1/user/my-appointments/", {
         headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
       })
-      .then((res) => setAppointments(res.data))
+      .then((res) => {
+        setAppointments(res.data);
+        console.log(res.data);
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -24,7 +33,8 @@ function UserDashboard() {
           {appointments.map((appt) => (
             <li key={appt.id} className="p-4 border rounded-lg shadow">
               <p className="font-semibold">Advisor: {appt.advisor_name}</p>
-              <p>Status: 
+              <p>
+                Status:
                 <span
                   className={
                     appt.status === "pending"
@@ -34,24 +44,38 @@ function UserDashboard() {
                       : "text-red-600"
                   }
                 >
-                  {" "}{appt.status}
+                  {" "}
+                  {appt.status}
                 </span>
               </p>
 
               {appt.status === "accepted" && (
-                <div className="mt-2 text-sm text-gray-700">
-                  <p><span className="font-medium">Day:</span> {appt.preferred_day}</p>
-                  <p><span className="font-medium">Time:</span> {appt.preferred_time}</p>
-                  <p><span className="font-medium">Method:</span> {appt.communication_method}</p>
+                <div className="mt-2 text-sm text-white">
+                  <p>
+                    <span className="font-medium">Day:</span>{" "}
+                    {appt.preferred_day}
+                  </p>
+                  <p>
+                    <span className="font-medium">Time:</span>{" "}
+                    {appt.preferred_time}
+                  </p>
+                  <p>
+                    <span className="font-medium">Method:</span>{" "}
+                    {COMMUNICATION_LABELS[appt.communication_method]}
+                  </p>
                 </div>
               )}
 
               {appt.status === "declined" && (
-                <p className="text-red-600 mt-2">message : {appt.decline_message}</p>
+                <p className="text-red-600 mt-2">
+                  message : {appt.decline_message}
+                </p>
               )}
 
               {appt.status === "pending" && (
-                <p className="text-yellow-600 mt-2">⌛ Waiting for advisor approval...</p>
+                <p className="text-yellow-600 mt-2">
+                  ⌛ Waiting for advisor approval...
+                </p>
               )}
             </li>
           ))}

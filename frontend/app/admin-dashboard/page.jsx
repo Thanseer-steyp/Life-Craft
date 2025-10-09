@@ -97,7 +97,7 @@ function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="wrapper py-6 px-1.5">
+        <div className="wrapper py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">

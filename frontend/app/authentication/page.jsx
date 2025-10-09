@@ -104,6 +104,11 @@ function AuthPage() {
         const accessToken = res.data.data.access;
         const refreshToken = res.data.data.refresh;
 
+        localStorage.setItem("access", accessToken);
+        localStorage.setItem("refresh", refreshToken);
+
+        window.dispatchEvent(new Event("login"));
+
         // 🔹 Admin check
         if (formData.email === "admin.lifecraft@gmail.com") {
           router.push("/admin-dashboard");
@@ -147,6 +152,11 @@ function AuthPage() {
 
           const accessToken = res.data.data.access;
           const refreshToken = res.data.data.refresh;
+
+          localStorage.setItem("access", accessToken);
+          localStorage.setItem("refresh", refreshToken);
+
+          window.dispatchEvent(new Event("login"));
 
           // 🔹 Admin check
           if (formData.email === "admin.lifecraft@gmail.com") {

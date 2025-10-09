@@ -166,9 +166,9 @@ class Appointment(models.Model):
 
     COMMUNICATION_CHOICES = (
         ("google_meet", "Google Meet"),
-        ("whatsapp", "WhatsApp Video Call"),
+        ("whatsapp_video_call", "WhatsApp Video Call"),
         ("zoom", "Zoom"),
-        ("phone", "Phone Call"),
+        ("phone_call", "Phone Call"),
     )
 
     user = models.ForeignKey(
