@@ -210,3 +210,8 @@ body {
   width: 90%;
   margin: 0 auto;
 }
+
+
+.bg1 {
+  background: linear-gradient(180deg, #fff 25%, #bfa8fe 100%, #cffafe 100%);
+}

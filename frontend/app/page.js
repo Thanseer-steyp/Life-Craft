@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 function Page() {
+  const router = useRouter();
   const [token, setToken] = useState(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [advisorRequested, setAdvisorRequested] = useState(false);
@@ -33,6 +35,14 @@ function Page() {
     }
   }, []);
 
+  const handleStartJourney = () => {
+    if (token) {
+      router.push("/profile-setup");
+    } else {
+      router.push("/authentication");
+    }
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     window.dispatchEvent(new Event("login-status-changed"));
@@ -40,10 +50,30 @@ function Page() {
   };
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center space-y-4">
-      <h1 className="font-extrabold text-6xl">Welcome to LifeCraft</h1>
+    <div className="min-h-screen bg1">
+      <div>
+        <h1 className="font-bold text-6xl text-center leading-tight pt-30 text-[#000000de] tracking-tight">
+          Designing Your
+          <br />
+          <span className="">Dream Retirement</span>
+        </h1>
+        <p className="text-black text-lg font-light text-center mt-2">
+          Visualize your future, plan with purpose, and live the retirement you
+          deserve.
+        </p>
+        <button
+          onClick={handleStartJourney}
+          className="bg-black text-white rounded-sm p-2.5 w-max mx-auto block mt-8 shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition duration-300"
+        >
+          Start your journey
+        </button>
+      </div>
 
-      {token ? (
+      <div className="w-[35%] mx-auto rounded-md">
+        <img src="hero2.png" alt="Hero" className="block w-full rounded-xl" />
+      </div>
+
+      {/* {token ? (
         <>
           <button
             className="bg-red-500 rounded-full p-3 cursor-pointer"
@@ -92,8 +122,12 @@ function Page() {
           Login
         </Link>
       )}
-      <Link href="/user-inbox" className="bg-gray-200 rounded-full p-3 cursor-pointer text-black font-bold">Inbox</Link>
-      
+      <Link
+        href="/user-inbox"
+        className="bg-gray-200 rounded-full p-3 cursor-pointer text-black font-bold"
+      >
+        Inbox
+      </Link> */}
     </div>
   );
 }
