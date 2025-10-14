@@ -99,7 +99,9 @@ function Header() {
         ) : (
           <Link
             href="/authentication"
-            className="p-2.5 bg-white shadow-xl text-sm rounded-md text-black font-bold hover:bg-gray-100"
+            className={`p-2.5 shadow-xl text-sm rounded-md  font-bold hover:bg-gray-100 ${
+              isScrolled?"bg-black text-white" : "bg-white text-black" 
+            }`}
           >
             Get Started
           </Link>

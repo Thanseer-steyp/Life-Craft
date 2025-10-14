@@ -8,10 +8,12 @@ function AuthPage() {
 
   const [isLogin, setIsLogin] = useState(true);
   const [useOTP, setUseOTP] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resetPassword, setResetPassword] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -109,6 +111,8 @@ function AuthPage() {
 
         window.dispatchEvent(new Event("login"));
 
+        setSuccess(true);
+
         // 🔹 Admin check
         if (formData.email === "admin.lifecraft@gmail.com") {
           router.push("/admin-dashboard");
@@ -157,6 +161,8 @@ function AuthPage() {
           localStorage.setItem("refresh", refreshToken);
 
           window.dispatchEvent(new Event("login"));
+
+          setSuccess(true);
 
           // 🔹 Admin check
           if (formData.email === "admin.lifecraft@gmail.com") {
@@ -217,7 +223,7 @@ function AuthPage() {
   }, [cooldown]);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="bg-gradient-to-br pt-20 from-slate-900 via-slate-800 to-slate-900">
       <div className="h-max flex wrapper">
         <style>{`
         @keyframes fadeInLeft {
@@ -372,7 +378,9 @@ function AuthPage() {
             <div className="flex items-center space-x-3 mb-5">
               <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center border border-slate-600">
                 <svg
-                  className="w-7 h-7 text-slate-300"
+                  className={`w-7 h-7  ${
+                    success ? "text-green-600" : "text-red-600"
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -402,7 +410,7 @@ function AuthPage() {
 
               {/* Feature Points */}
               <div className="space-y-6 mb-12">
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 hover:-translate-x-1 transition duration-150">
                   <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
                     <svg
                       className="w-5 h-5 text-emerald-400"
@@ -429,7 +437,7 @@ function AuthPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 hover:-translate-x-1 transition duration-150">
                   <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
                     <svg
                       className="w-5 h-5 text-emerald-400"
@@ -456,7 +464,7 @@ function AuthPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 hover:-translate-x-2 transition duration-300">
                   <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-600">
                     <svg
                       className="w-5 h-5 text-emerald-400"
@@ -535,7 +543,7 @@ function AuthPage() {
             </div>
 
             {/* Auth Card */}
-            <div className="bg-white shadow-xl rounded-2xl border border-slate-200">
+            <div className="bg-white shadow-xl rounded-2xl border border-slate-200 hover:scale-101 transition duration-500">
               <div className="px-8 py-10">
                 <h2 className="text-3xl font-serif font-semibold mb-2 text-slate-900">
                   {isLogin
@@ -618,15 +626,67 @@ function AuthPage() {
                         <label className="block text-sm font-semibold text-slate-700 mb-2">
                           Password
                         </label>
-                        <input
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                          required
-                          disabled={otpSent}
-                        />
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                            required
+                            disabled={otpSent}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-700"
+                            tabIndex={-1} // prevents it from stealing focus when tabbing
+                          >
+                            {showPassword ? (
+                              // 👁️ Hide icon
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.956-3.114M6.227 6.227A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.97 9.97 0 01-1.604 2.574M15 12a3 3 0 00-3-3m0 0a3 3 0 013 3m-3 0a3 3 0 01-3 3m0 0a3 3 0 003-3z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M3 3l18 18"
+                                />
+                              </svg>
+                            ) : (
+                              // 👁️ Show icon
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.543 7-1.275 4.057-5.065 7-9.543 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </div>
                       {otpSent && (
                         <div className="field-group animate-scaleIn">
@@ -682,14 +742,66 @@ function AuthPage() {
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
                               New Password
                             </label>
-                            <input
-                              type="password"
-                              name="newPassword"
-                              value={formData.newPassword}
-                              onChange={handleChange}
-                              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                              required
-                            />
+                            <div className="relative">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                name="newPassword"
+                                value={formData.newPassword}
+                                onChange={handleChange}
+                                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-700"
+                                tabIndex={-1} // prevents it from stealing focus when tabbing
+                              >
+                                {showPassword ? (
+                                  // 👁️ Hide icon
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.956-3.114M6.227 6.227A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.97 9.97 0 01-1.604 2.574M15 12a3 3 0 00-3-3m0 0a3 3 0 013 3m-3 0a3 3 0 01-3 3m0 0a3 3 0 003-3z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M3 3l18 18"
+                                    />
+                                  </svg>
+                                ) : (
+                                  // 👁️ Show icon
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.543 7-1.275 4.057-5.065 7-9.543 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </>
                       )}
@@ -718,14 +830,66 @@ function AuthPage() {
                           <label className="block text-sm font-semibold text-slate-700 mb-2">
                             Password
                           </label>
-                          <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
-                            required
-                          />
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              name="password"
+                              value={formData.password}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-slate-800 focus:border-transparent transition outline-none input-focus bg-white"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-700"
+                              tabIndex={-1} // prevents it from stealing focus when tabbing
+                            >
+                              {showPassword ? (
+                                // 👁️ Hide icon
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.956-3.114M6.227 6.227A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.97 9.97 0 01-1.604 2.574M15 12a3 3 0 00-3-3m0 0a3 3 0 013 3m-3 0a3 3 0 01-3 3m0 0a3 3 0 003-3z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 3l18 18"
+                                  />
+                                </svg>
+                              ) : (
+                                // 👁️ Show icon
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.543 7-1.275 4.057-5.065 7-9.543 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       )}
                       {useOTP && otpSent && (

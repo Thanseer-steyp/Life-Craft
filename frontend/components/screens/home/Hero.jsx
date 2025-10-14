@@ -52,7 +52,7 @@ function Page() {
   return (
     <div className="min-h-screen bg1">
       <div>
-        <h1 className="font-bold text-6xl text-center leading-tight pt-30 text-[#000000de] tracking-tight">
+        <h1 className="font-bold text-6xl text-center leading-tight pt-30 text-[#000000de] tracking-tight select-none">
           Designing Your
           <br />
           <span className="">Dream Retirement</span>
