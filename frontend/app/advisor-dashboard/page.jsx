@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 function AdvisorDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -8,6 +9,7 @@ function AdvisorDashboard() {
   const [acceptingId, setAcceptingId] = useState(null);
   const [decliningId, setDecliningId] = useState(null);
   const [formData, setFormData] = useState({});
+  const router = useRouter();
 
   useEffect(() => {
     fetchAppointments();
@@ -37,7 +39,7 @@ function AdvisorDashboard() {
 
   const submitAccept = async (id) => {
     try {
-      await axios.post(
+      const res = await axios.post(
         `http://localhost:8000/api/v1/advisor/manage-appointment/${id}/`,
         {
           action: "accept",
@@ -47,8 +49,16 @@ function AdvisorDashboard() {
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem("access")}` } }
       );
+
       setAcceptingId(null);
       fetchAppointments();
+
+      // ✅ Redirect to chatroom after accept
+      if (res.data.chatroom_id) {
+        setTimeout(() => {
+          router.push(`/chat/${res.data.chatroom_id}`);
+        }, 1000);
+      }
     } catch (err) {
       console.error(err);
       alert("Failed to accept appointment");
@@ -127,6 +137,14 @@ function AdvisorDashboard() {
                     <span className="font-medium">Method:</span>{" "}
                     {appt.communication_method}
                   </p>
+                  <div className="sm:col-span-3 mt-3">
+                    <button
+                      onClick={() => router.push(`/chat/${appt.id}`)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    >
+                      💬 Open Chat
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -143,7 +161,6 @@ function AdvisorDashboard() {
               {/* Pending actions */}
               {appt.status === "pending" && (
                 <div className="mt-4 space-y-3">
-                  {/* Accept Form */}
                   {acceptingId === appt.id && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <input
@@ -193,7 +210,6 @@ function AdvisorDashboard() {
                     </div>
                   )}
 
-                  {/* Decline Form */}
                   {decliningId === appt.id && (
                     <div className="mt-2 space-y-2">
                       <textarea
@@ -220,7 +236,6 @@ function AdvisorDashboard() {
                     </div>
                   )}
 
-                  {/* Action buttons when no form is open */}
                   {acceptingId !== appt.id && decliningId !== appt.id && (
                     <div className="flex gap-3">
                       <button

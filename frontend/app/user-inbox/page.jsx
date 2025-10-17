@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 function UserDashboard() {
   const COMMUNICATION_LABELS = {
@@ -9,6 +10,7 @@ function UserDashboard() {
     zoom: "Zoom",
     phone_call: "Phone Call",
   };
+  const router = useRouter()
   const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
@@ -76,6 +78,14 @@ function UserDashboard() {
                 <p className="text-yellow-600 mt-2">
                   ⌛ Waiting for advisor approval...
                 </p>
+              )}
+              {appt.status === "accepted" && (
+                <button
+                  onClick={() => router.push(`/chat/${appt.id}`)}
+                  className="bg-[#bfa8fe] text-white px-3 py-2 rounded-lg"
+                >
+                  Chat Now
+                </button>
               )}
             </li>
           ))}

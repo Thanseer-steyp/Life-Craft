@@ -223,7 +223,7 @@ function AuthPage() {
   }, [cooldown]);
 
   return (
-    <div className="bg-gradient-to-br pt-20 from-slate-900 via-slate-800 to-slate-900">
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="h-max flex wrapper">
         <style>{`
         @keyframes fadeInLeft {
@@ -543,7 +543,7 @@ function AuthPage() {
             </div>
 
             {/* Auth Card */}
-            <div className="bg-white shadow-xl rounded-2xl border border-slate-200 hover:scale-101 transition duration-500">
+            <div className="bg-white shadow-xl rounded-2xl border border-slate-200 transition duration-500">
               <div className="px-8 py-10">
                 <h2 className="text-3xl font-serif font-semibold mb-2 text-slate-900">
                   {isLogin

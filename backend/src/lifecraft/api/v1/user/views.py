@@ -9,6 +9,8 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
+from chatroom.models import ChatRoom, Message
+from .serializers import ChatRoomSerializer, MessageSerializer
 
 
 
@@ -149,3 +151,46 @@ class UserAppointmentsView(APIView):
         appointments = Appointment.objects.filter(user=request.user).order_by("-created_at")
         serializer = AppointmentSerializer(appointments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class ChatRoomView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, appointment_id):
+        try:
+            chatroom, created = ChatRoom.objects.get_or_create(
+                appointment_id=appointment_id,
+                defaults={
+                    "user": Appointment.objects.get(id=appointment_id).user,
+                    "advisor": Appointment.objects.get(id=appointment_id).advisor,
+                }
+            )
+        except Appointment.DoesNotExist:
+            return Response({"detail": "Appointment not found"}, status=404)
+
+        if request.user not in [chatroom.user, chatroom.advisor]:
+            return Response({"detail": "Access denied"}, status=403)
+
+        serializer = ChatRoomSerializer(chatroom)
+        return Response(serializer.data)
+
+    def post(self, request, appointment_id):
+        try:
+            chatroom = ChatRoom.objects.get(appointment_id=appointment_id)
+        except ChatRoom.DoesNotExist:
+            return Response({"detail": "Chatroom not found"}, status=404)
+
+        if request.user not in [chatroom.user, chatroom.advisor]:
+            return Response({"detail": "Access denied"}, status=403)
+
+        content = request.data.get("content")
+        if not content:
+            return Response({"detail": "Message content is required"}, status=400)
+
+        message = Message.objects.create(
+            chatroom=chatroom,
+            sender=request.user,
+            content=content
+        )
+
+        serializer = MessageSerializer(message)
+        return Response(serializer.data, status=201)

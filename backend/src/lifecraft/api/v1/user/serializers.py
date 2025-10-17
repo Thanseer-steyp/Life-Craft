@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from user.models import Profile,AdvisorRequest,Appointment
+from chatroom.models import ChatRoom, Message
 
 
 
@@ -177,3 +178,18 @@ class AppointmentSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "status", "created_at"]
 
 
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.username", read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ["id", "sender", "sender_name", "content", "timestamp"]
+
+class ChatRoomSerializer(serializers.ModelSerializer):
+    messages = MessageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ChatRoom
+        fields = ["id", "appointment", "user", "advisor", "messages", "created_at"]

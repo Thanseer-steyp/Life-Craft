@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProfileSetupView,UserDashboardView,AdvisorRequestView,ClientsListView, ClientDetailView,BookAppointmentView,UserAppointmentsView
+from .views import ProfileSetupView,UserDashboardView,AdvisorRequestView,ClientsListView, ClientDetailView,BookAppointmentView,UserAppointmentsView,ChatRoomView
 
 urlpatterns = [
     path("profile-setup/", ProfileSetupView.as_view(), name="profile-setup"),
@@ -9,6 +9,7 @@ urlpatterns = [
     path('clients-list/', ClientsListView.as_view(), name='clients-list'),
     path('client/<int:id>/', ClientDetailView.as_view(), name='client-data'),
     path("my-appointments/", UserAppointmentsView.as_view(), name="user-appointments"),
+    path("chat/<int:appointment_id>/", ChatRoomView.as_view(), name="chat-room"),
 ]
 
 

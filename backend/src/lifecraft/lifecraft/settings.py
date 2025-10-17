@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'register',
     'user',
     'advisor',
-
+    'chatroom',
 ]
 
 MIDDLEWARE = [

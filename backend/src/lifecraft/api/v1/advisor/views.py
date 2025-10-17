@@ -5,6 +5,7 @@ from advisor.models import Advisor
 from rest_framework import permissions, status
 from .serializers import AdvisorSerializer
 from user.models import Appointment
+from chatroom.models import ChatRoom
 from api.v1.user.serializers import AppointmentSerializer
 
 
@@ -28,15 +29,19 @@ class AppointmentInboxView(APIView):
         return Response(serializer.data)
 
 
+
+
 class ManageAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, appointment_id):
+        # Check if current user is an advisor
         try:
             advisor = Advisor.objects.get(user=request.user)
         except Advisor.DoesNotExist:
             return Response({"error": "Not an advisor"}, status=status.HTTP_403_FORBIDDEN)
 
+        # Get the appointment for this advisor
         try:
             appointment = Appointment.objects.get(id=appointment_id, advisor=advisor)
         except Appointment.DoesNotExist:
@@ -46,15 +51,30 @@ class ManageAppointmentView(APIView):
 
         if action == "decline":
             appointment.status = "declined"
-            appointment.save()
+            appointment.decline_message = request.data.get("decline_message", "")
+            appointment.save()  # triggers post_save (chatroom not created for declined)
             return Response({"message": "Appointment declined"}, status=status.HTTP_200_OK)
 
-        if action == "accept":
+        elif action == "accept":
             appointment.status = "accepted"
             appointment.preferred_day = request.data.get("preferred_day")
             appointment.preferred_time = request.data.get("preferred_time")
             appointment.communication_method = request.data.get("communication_method")
-            appointment.save()
-            return Response(AppointmentSerializer(appointment).data, status=status.HTTP_200_OK)
+            appointment.save()  # triggers post_save signal
 
-        return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+            # Safely get or create the chatroom
+            chatroom, created = ChatRoom.objects.get_or_create(
+                appointment=appointment,
+                defaults={
+                    "user": appointment.user,
+                    "advisor": appointment.advisor.user
+                }
+            )
+
+            data = AppointmentSerializer(appointment).data
+            data['chatroom_id'] = chatroom.id  # return chatroom id to frontend
+
+            return Response(data, status=status.HTTP_200_OK)
+
+        else:
+            return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
