@@ -869,6 +869,14 @@ function AuthPage() {
                           setOtpSent(false);
                           setError("");
                           setMessage("");
+                          setFormData({
+                            name: "",
+                            username: "",
+                            email: "",
+                            password: "",
+                            otp: "",
+                            newPassword: "",
+                          });
                         }}
                         className="text-slate-900 font-semibold link-hover"
                       >
