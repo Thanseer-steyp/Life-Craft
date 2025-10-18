@@ -132,6 +132,7 @@ class LoginView(APIView):
                         "status_code": 6000,
                         "message": "Login successful",
                         "data": {
+                            "user_id": user.id,
                             "username": user.username,
                             "email": user.email,
                             "access": str(refresh.access_token),

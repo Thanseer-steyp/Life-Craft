@@ -36,6 +36,12 @@ function AdvisorDashboard() {
       [id]: { ...prev[id], [field]: value },
     }));
   };
+  const handleLogout = () => {
+    localStorage.clear();
+    window.dispatchEvent(new Event("login-status-changed"));
+    router.push("/authentication");
+  };
+  
 
   const submitAccept = async (id) => {
     try {
@@ -47,18 +53,17 @@ function AdvisorDashboard() {
           preferred_time: formData[id]?.preferred_time,
           communication_method: formData[id]?.communication_method,
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("access")}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+        }
       );
 
       setAcceptingId(null);
       fetchAppointments();
 
       // ✅ Redirect to chatroom after accept
-      if (res.data.chatroom_id) {
-        setTimeout(() => {
-          router.push(`/chat/${res.data.chatroom_id}`);
-        }, 1000);
-      }
     } catch (err) {
       console.error(err);
       alert("Failed to accept appointment");
@@ -73,7 +78,11 @@ function AdvisorDashboard() {
           action: "decline",
           decline_message: formData[id]?.decline_message,
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("access")}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+        }
       );
       setDecliningId(null);
       fetchAppointments();
@@ -174,7 +183,11 @@ function AdvisorDashboard() {
                         type="time"
                         className="border rounded px-3 py-2 w-full text-gray-800"
                         onChange={(e) =>
-                          handleChange(appt.id, "preferred_time", e.target.value)
+                          handleChange(
+                            appt.id,
+                            "preferred_time",
+                            e.target.value
+                          )
                         }
                       />
                       <select
@@ -216,7 +229,11 @@ function AdvisorDashboard() {
                         placeholder="Reason for declining"
                         className="border rounded p-3 w-full text-gray-800"
                         onChange={(e) =>
-                          handleChange(appt.id, "decline_message", e.target.value)
+                          handleChange(
+                            appt.id,
+                            "decline_message",
+                            e.target.value
+                          )
                         }
                       />
                       <div className="flex gap-3">
@@ -258,6 +275,13 @@ function AdvisorDashboard() {
           ))}
         </ul>
       )}
+
+      <button
+        onClick={handleLogout}
+        className="w-max mx-auto mt-4 p-2 bg-red-600 block"
+      >
+        Logout
+      </button>
     </div>
   );
 }

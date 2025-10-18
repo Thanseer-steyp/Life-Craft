@@ -91,9 +91,6 @@ function Header() {
 
         {/* Navigation */}
         <nav className="gap-5 hidden md:flex items-center text-black text-sm">
-          <Link href="/" className="p-2.5 rounded-md hover:bg-gray-100">
-            Features
-          </Link>
           <Link
             href="/booking-appoinment"
             className="p-2.5 rounded-md hover:bg-gray-100"
@@ -105,6 +102,9 @@ function Header() {
             className="p-2.5 rounded-md hover:bg-gray-100"
           >
             Inbox
+          </Link>
+          <Link href="/" className="p-2.5 rounded-md hover:bg-gray-100">
+            Features
           </Link>
           <Link href="/" className="p-2.5 rounded-md hover:bg-gray-100">
             About Us
@@ -148,13 +148,13 @@ function Header() {
 
                   <Link
                     href="/user-dashboard"
-                    className="w-full mt-4 py-2 bg-blue-500 text-white block text-center rounded-lg hover:bg-blue-600 transition"
+                    className="w-full mt-4 py-2 bg-gray-900 text-white block text-center rounded-sm hover:bg-black transition"
                   >
                     Dashboard
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full mt-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                    className="w-full mt-4 py-2 bg-red-600 text-white rounded-sm hover:bg-red-700 transition"
                   >
                     Sign Out
                   </button>
