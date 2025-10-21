@@ -185,11 +185,17 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ["id", "sender", "sender_name", "content", "timestamp"]
+        fields = ["id", "sender", "sender_name", "content", "timestamp","is_read"]
 
 class ChatRoomSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="user.username", read_only=True)
+    advisor_name = serializers.CharField(source="advisor.username", read_only=True)
     messages = MessageSerializer(many=True, read_only=True)
 
     class Meta:
         model = ChatRoom
-        fields = ["id", "appointment", "user", "advisor", "messages", "created_at"]
+        fields = [
+            "id", "appointment", "user", "advisor",
+            "user_name", "advisor_name",
+            "messages", "created_at"
+        ]

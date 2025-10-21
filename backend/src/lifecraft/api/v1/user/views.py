@@ -194,3 +194,24 @@ class ChatRoomView(APIView):
 
         serializer = MessageSerializer(message)
         return Response(serializer.data, status=201)
+
+
+class MarkMessagesReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_id):
+        try:
+            chatroom = ChatRoom.objects.get(appointment_id=appointment_id)
+        except ChatRoom.DoesNotExist:
+            return Response({"detail": "Chatroom not found"}, status=404)
+
+        # Only user or advisor of this chatroom can mark messages as read
+        if request.user not in [chatroom.user, chatroom.advisor]:
+            return Response({"detail": "Access denied"}, status=403)
+
+        # Mark all messages from the other user as read
+        Message.objects.filter(
+            chatroom=chatroom
+        ).exclude(sender=request.user).update(is_read=True)
+
+        return Response({"detail": "Messages marked as read"}, status=200)
