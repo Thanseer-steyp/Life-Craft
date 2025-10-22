@@ -143,6 +143,23 @@ class BookAppointmentView(APIView):
 
         return Response(AppointmentSerializer(appointment).data, status=201)
     
+class CheckAppointmentStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, advisor_id):
+        try:
+            appointment = Appointment.objects.filter(
+                user=request.user, advisor__id=advisor_id
+            ).order_by("-created_at").first()
+
+            if not appointment:
+                return Response({"status": None}, status=status.HTTP_200_OK)
+
+            return Response({"status": appointment.status}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class UserAppointmentsView(APIView):
     permission_classes = [IsAuthenticated]

@@ -231,10 +231,10 @@ function AuthPage() {
   return (
     <>
       <div className="flex min-h-screen">
-        <div className="w-1/2 pr-0 bg-white  flex flex-col items-center justify-center">
+        <div className="w-1/2 pr-0 bg-white flex flex-col items-center justify-center">
           <div className="w-full">
             {/* Auth Card */}
-            <div className="transition duration-500 w-2/3 mx-auto">
+            <div className="transition duration-500 w-3/5 mx-auto">
               <div className="p-8">
                 <h1 className="flex items-center justify-center mb-8">
                   <Link href="/" className="flex gap-1 items-center">
