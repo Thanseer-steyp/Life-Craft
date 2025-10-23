@@ -118,7 +118,7 @@ export default function AdvisorsPage() {
 
         <div className="flex gap-8">
           {/* Advisors List */}
-          <div className="w-1/3 space-y-3 bg-white p-4 rounded-xl">
+          <div className="w-1/3 space-y-3 bg-white p-4 rounded-xl h-max">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
               Choose Advisor
             </h2>

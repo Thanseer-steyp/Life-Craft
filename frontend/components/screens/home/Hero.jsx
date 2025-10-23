@@ -59,14 +59,14 @@ function Page() {
         </p>
         <button
           onClick={handleStartJourney}
-          className="bg-black text-white rounded-sm p-2.5 w-max mx-auto block mt-8 shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition duration-300"
+          className="bg-black text-white font-bold rounded-sm px-3.5 py-4 btn-hover w-max mx-auto block mt-8 shadow-md hover:shadow-2xl hover:-translate-y-1.1 transition duration-300"
         >
           Start your journey
         </button>
       </div>
 
       <div className="w-[35%] mx-auto rounded-md">
-        <img src="hero2.png" alt="Hero" className="block w-full rounded-xl" />
+        <img src="/hero2.png" alt="Hero" className="block w-full rounded-xl" />
       </div>
 
       {/* {token ? (
