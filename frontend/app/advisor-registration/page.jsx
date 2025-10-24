@@ -38,9 +38,9 @@ function BecomeAdvisorForm() {
   const totalSteps = 4;
   const stepTitles = {
     1: "Personal Details",
-    2: "Agency Details",
-    3: "Contact Person Details",
-    4: "Work Order Scope",
+    2: "Professional Details",
+    3: "Documents Verification",
+    4: "Preview",
   };
 
   useEffect(() => {
@@ -65,8 +65,31 @@ function BecomeAdvisorForm() {
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
+
     if (type === "file") {
-      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+      // PROFILE PHOTO FILE VALIDATION
+      if (name === "profile_photo" && files[0]) {
+        const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
+        if (!allowedTypes.includes(files[0].type)) {
+          setMessage(
+            "File is not acceptable. Only PNG, JPG, and JPEG are allowed."
+          );
+          // Clear invalid file
+          setFormData((prev) => ({ ...prev, [name]: null }));
+          setUploadedFiles((prev) => {
+            const newFiles = { ...prev };
+            delete newFiles[name];
+            return newFiles;
+          });
+          e.target.value = ""; // reset file input
+          return;
+        } else {
+          setMessage(""); // clear previous error if valid
+        }
+      }
+
+      // UPDATE FORM DATA AND UPLOADED FILES
+      setFormData((prev) => ({ ...prev, [name]: files[0] || null }));
 
       if (files[0]) {
         setUploadedFiles((prev) => ({
@@ -85,25 +108,98 @@ function BecomeAdvisorForm() {
         });
       }
 
-      if (name === "profile_photo" && files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setProfilePhotoPreview(e.target.result);
-        };
-        reader.readAsDataURL(files[0]);
-      }
+      // DISABLE PROFILE PHOTO PREVIEW
+      if (name === "profile_photo") setProfilePhotoPreview(null);
     } else if (type === "checkbox") {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
+      // Limit age input to 2 digits
       if (name === "age" && value.length > 2) return;
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
+  const initialFormData = {
+    profile_photo: null,
+    age: "",
+    gender: "Male",
+    full_name: "",
+    email: "",
+    phone_number: "",
+    country_address: "",
+    state_address: "",
+    language_preferences: "",
+    advisor_type: "financial",
+    experience_years: "",
+    company: "",
+    designation: "",
+    highest_qualification: "bachelor",
+    specialized_in: "",
+    educational_certificate: null,
+    previous_companies: "",
+    resume: null,
+    govt_id_type: "passport",
+    govt_id_proof_id: "",
+    govt_id_file: null,
+    confirm_details: false,
+  };
+
+  const handleClear = () => {
+    setFormData((prev) => ({
+      ...initialFormData,
+      full_name: prev.full_name,
+      email: prev.email,
+    }));
+    setUploadedFiles({});
+    setProfilePhotoPreview(null);
+
+    document.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.value = "";
+    });
+  };
+
+  const requiredFieldsByStep = {
+    1: [
+      "profile_photo",
+      "age",
+      "gender",
+      "language_preferences",
+      "phone_number",
+      "country_address",
+      "state_address",
+    ],
+    2: ["advisor_type", "experience_years", "highest_qualification"],
+    3: [
+      "govt_id_type",
+      "govt_id_proof_id",
+      "govt_id_file",
+      "educational_certificate",
+    ],
+    4: ["confirm_details"], // step 4 requires confirmation checkbox
+  };
+
   const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    const requiredFields = requiredFieldsByStep[currentStep] || [];
+
+    const missingFields = requiredFields.filter((field) => {
+      if (field === "profile_photo" || field === "govt_id_file") {
+        return !formData[field]; // check if file is selected
+      }
+      if (field === "confirm_details") {
+        return !formData[field]; // check if checkbox is checked
+      }
+      return !formData[field] || formData[field] === ""; // normal fields
+    });
+
+    if (missingFields.length > 0) {
+      setMessage(
+        `Oops! Some required fields are missing. Please fill them in to continue.`
+      );
+      return; // stop going to next step
     }
+
+    setMessage(""); // clear previous message
+    if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -114,14 +210,14 @@ function BecomeAdvisorForm() {
 
   const getSpecializationPlaceholder = (advisorType) => {
     const placeholders = {
-      financial: "e.g., Investment Planning, Tax Advisory, Retirement Planning",
-      lifestyle: "e.g., Wellness Coaching, Life Balance, Personal Development",
-      legal: "e.g., Corporate Law, Family Law, Real Estate Law",
-      healthcare: "e.g., General Medicine, Mental Health, Nutrition",
-      travel: "e.g., Adventure Travel, Luxury Travel, Business Travel",
-      automobile: "e.g., Car Maintenance, Vehicle Selection, Auto Insurance",
+      financial: "Investment Planning, Tax Advisory, Retirement Planning",
+      lifestyle: "Wellness Coaching, Life Balance, Personal Development",
+      legal: "Corporate Law, Family Law, Real Estate Law",
+      healthcare: "General Medicine, Mental Health, Nutrition",
+      travel: "Adventure Travel, Luxury Travel, Business Travel",
+      automobile: "Car Maintenance, Vehicle Selection, Auto Insurance",
       architectural:
-        "e.g., Residential Design, Commercial Architecture, Interior Design",
+        "Residential Design, Commercial Architecture, Interior Design",
     };
     return placeholders[advisorType] || "Your area of expertise";
   };
@@ -137,7 +233,7 @@ function BecomeAdvisorForm() {
         </label>
 
         {fileInfo ? (
-          <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-300 rounded">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border border-gray-300 rounded">
             <span className="text-sm text-gray-600 truncate">
               {fileInfo.name}
             </span>
@@ -172,38 +268,34 @@ function BecomeAdvisorForm() {
             />
             <label
               htmlFor={name}
-              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded bg-white text-gray-700 text-sm cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded bg-white text-gray-700 text-sm cursor-pointer hover:bg-gray-50"
             >
               Choose File
             </label>
-            <span className="text-xs text-gray-500 mt-1 block">
-              No file chosen.
-            </span>
           </div>
         )}
       </div>
     );
   };
 
-  const ProfilePhotoInput = ({ name, label, accept, required = false }) => (
-    <div className="block">
-      <label className="text-gray-700 text-sm font-medium mb-2 block">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+  const ProfilePhotoInput = ({ name, label, required = false }) => {
+    const fileInfo = uploadedFiles[name];
 
-      {profilePhotoPreview && (
-        <div className="mb-4">
-          <div className="relative inline-block">
-            <img
-              src={profilePhotoPreview}
-              alt="Profile Preview"
-              className="w-24 h-24 object-cover rounded-full border-2 border-gray-300"
-            />
+    return (
+      <div className="block">
+        <label className="text-gray-700 text-sm font-medium mb-2 block">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+
+        {fileInfo ? (
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border border-gray-300 rounded">
+            <span className="text-sm text-gray-600 truncate">
+              {fileInfo.name}
+            </span>
             <button
               type="button"
               onClick={() => {
-                setProfilePhotoPreview(null);
                 setFormData((prev) => ({ ...prev, [name]: null }));
                 setUploadedFiles((prev) => {
                   const newFiles = { ...prev };
@@ -214,34 +306,35 @@ function BecomeAdvisorForm() {
                   `input[name="${name}"]`
                 );
                 if (fileInput) fileInput.value = "";
+                setProfilePhotoPreview(null);
               }}
-              className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+              className="text-red-600 hover:text-red-700 text-sm ml-2 whitespace-nowrap"
             >
-              ×
+              Remove
             </button>
           </div>
-        </div>
-      )}
-
-      <div className="relative">
-        <input
-          type="file"
-          name={name}
-          accept={accept}
-          onChange={handleChange}
-          className="hidden"
-          id={name}
-          required={required}
-        />
-        <label
-          htmlFor={name}
-          className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded bg-white text-gray-700 text-sm cursor-pointer hover:bg-gray-50"
-        >
-          Choose File
-        </label>
+        ) : (
+          <div className="relative">
+            <input
+              type="file"
+              name={name}
+              accept=".png, .jpg, .jpeg"
+              onChange={handleChange}
+              className="hidden"
+              id={name}
+              required={required}
+            />
+            <label
+              htmlFor={name}
+              className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded bg-white text-gray-700 text-sm cursor-pointer hover:bg-gray-50 transition"
+            >
+              Select Profile Photo
+            </label>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -251,13 +344,21 @@ function BecomeAdvisorForm() {
     }
 
     const requiredFields = [
+      "profile_photo",
       "age",
+      "gender",
+      "language_preferences",
       "phone_number",
       "country_address",
       "state_address",
+      "advisor_type",
       "experience_years",
+      "highest_qualification",
+      "govt_id_type",
       "govt_id_proof_id",
       "govt_id_file",
+      "educational_certificate",
+      "confirm_details",
     ];
 
     const missingFields = requiredFields.filter((field) => {
@@ -310,9 +411,6 @@ function BecomeAdvisorForm() {
       router.push("/");
     } catch (err) {
       console.error("Full error:", err);
-      console.error("Error response:", err.response?.data);
-      console.error("Error status:", err.response?.status);
-      console.error("Error message:", err.message);
 
       // More specific error message
       if (err.response?.data?.detail) {
@@ -350,34 +448,57 @@ function BecomeAdvisorForm() {
 
         {/* PROGRESS BAR */}
         <div className="mb-10">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center w-full">
             {[1, 2, 3, 4].map((step, idx) => (
-              <div key={step} className="flex items-center flex-1">
-                <div className="flex items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${
-                      currentStep > step
-                        ? "bg-green-500 text-white"
-                        : currentStep === step
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-500"
+              <div
+                key={step}
+                className={`flex items-center ${idx < 3 ? "flex-1" : ""}`}
+              >
+                {/* Step Circle */}
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${
+                    currentStep > step
+                      ? "bg-green-500 text-white"
+                      : currentStep === step
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 text-gray-500"
+                  }`}
+                >
+                  {currentStep > step ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-check"
+                    >
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  ) : (
+                    step
+                  )}
+                </div>
+
+                {/* Step Title */}
+                <div className="ml-3 min-w-max">
+                  <p
+                    className={`text-xs font-medium ${
+                      currentStep >= step ? "text-gray-800" : "text-gray-400"
                     }`}
                   >
-                    {currentStep > step ? "✓" : step}
-                  </div>
-                  <div className="ml-3 min-w-max">
-                    <p
-                      className={`text-xs font-medium ${
-                        currentStep >= step ? "text-gray-800" : "text-gray-400"
-                      }`}
-                    >
-                      {stepTitles[step]}
-                    </p>
-                  </div>
+                    {stepTitles[step]}
+                  </p>
                 </div>
+
+                {/* Line Between Steps (not after last step) */}
                 {idx < 3 && (
                   <div
-                    className={`flex-1 h-0.5 mx-2 ${
+                    className={`h-0.5 flex-1 mx-2 ${
                       currentStep > step ? "bg-green-500" : "bg-gray-200"
                     }`}
                   ></div>
@@ -398,7 +519,7 @@ function BecomeAdvisorForm() {
                 <ProfilePhotoInput
                   name="profile_photo"
                   label="Profile Photo"
-                  accept="image/*"
+                  required
                 />
 
                 <label className="block">
@@ -448,17 +569,32 @@ function BecomeAdvisorForm() {
                   <span className="text-gray-700 text-sm font-medium mb-2 block">
                     Gender<span className="text-red-500 ml-1">*</span>
                   </span>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                    required
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      className="w-full border appearance-none border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                      required
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+
+                    {/* Custom dropdown arrow */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="#000"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
                 </label>
 
                 <label className="block">
@@ -470,7 +606,6 @@ function BecomeAdvisorForm() {
                     name="phone_number"
                     value={formData.phone_number}
                     onChange={handleChange}
-                    placeholder="123-456-7890"
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                     required
                   />
@@ -478,14 +613,13 @@ function BecomeAdvisorForm() {
 
                 <label className="block">
                   <span className="text-gray-700 text-sm font-medium mb-2 block">
-                    Address<span className="text-red-500 ml-1">*</span>
+                    Country<span className="text-red-500 ml-1">*</span>
                   </span>
                   <input
                     type="text"
                     name="country_address"
                     value={formData.country_address}
                     onChange={handleChange}
-                    placeholder="Street Address"
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                     required
                   />
@@ -493,14 +627,13 @@ function BecomeAdvisorForm() {
 
                 <label className="block">
                   <span className="text-gray-700 text-sm font-medium mb-2 block">
-                    City/State<span className="text-red-500 ml-1">*</span>
+                    State<span className="text-red-500 ml-1">*</span>
                   </span>
                   <input
                     type="text"
                     name="state_address"
                     value={formData.state_address}
                     onChange={handleChange}
-                    placeholder="City, State/Province"
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                     required
                   />
@@ -509,14 +642,16 @@ function BecomeAdvisorForm() {
                 <label className="block">
                   <span className="text-gray-700 text-sm font-medium mb-2 block">
                     Language Preferences
+                    <span className="text-red-500 ml-1">*</span>
                   </span>
                   <input
                     type="text"
                     name="language_preferences"
                     value={formData.language_preferences}
                     onChange={handleChange}
-                    placeholder="e.g., English, Spanish, French"
+                    placeholder="English, Malayalam"
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                    required
                   />
                 </label>
               </div>
@@ -530,11 +665,10 @@ function BecomeAdvisorForm() {
               <div className="flex justify-between mt-8">
                 <button
                   type="button"
-                  onClick={prevStep}
+                  onClick={handleClear}
                   className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-400 transition"
-                  disabled={currentStep === 1}
                 >
-                  CANCEL
+                  CLEAR
                 </button>
                 <button
                   type="button"
@@ -542,7 +676,21 @@ function BecomeAdvisorForm() {
                   className="px-8 py-3 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition flex items-center"
                 >
                   CONTINUE
-                  <span className="ml-2">→</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-arrow-right-icon lucide-arrow-right"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -559,20 +707,36 @@ function BecomeAdvisorForm() {
                   <span className="text-gray-700 text-sm font-medium mb-2 block">
                     Advisor Type<span className="text-red-500 ml-1">*</span>
                   </span>
-                  <select
-                    name="advisor_type"
-                    value={formData.advisor_type}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                  >
-                    <option value="financial">Financial Advisor</option>
-                    <option value="lifestyle">Lifestyle Advisor</option>
-                    <option value="legal">Legal Advisor</option>
-                    <option value="healthcare">Healthcare Advisor</option>
-                    <option value="travel">Travel Advisor</option>
-                    <option value="automobile">Automobile Advisor</option>
-                    <option value="architectural">Architectural Advisor</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="advisor_type"
+                      value={formData.advisor_type}
+                      onChange={handleChange}
+                      className="w-full border appearance-none border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                    >
+                      <option value="financial">Financial Advisor</option>
+                      <option value="lifestyle">Lifestyle Advisor</option>
+                      <option value="legal">Legal Advisor</option>
+                      <option value="healthcare">Healthcare Advisor</option>
+                      <option value="travel">Travel Advisor</option>
+                      <option value="automobile">Automobile Advisor</option>
+                      <option value="architectural">
+                        Architectural Advisor
+                      </option>
+                    </select>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="#000"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
                 </label>
 
                 <label className="block">
@@ -585,7 +749,7 @@ function BecomeAdvisorForm() {
                     name="experience_years"
                     value={formData.experience_years}
                     onChange={handleChange}
-                    placeholder="e.g., 5"
+                    placeholder=""
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                     required
                   />
@@ -600,7 +764,7 @@ function BecomeAdvisorForm() {
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    placeholder="Your current employer"
+                    placeholder=""
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                   />
                 </label>
@@ -614,7 +778,7 @@ function BecomeAdvisorForm() {
                     name="designation"
                     value={formData.designation}
                     onChange={handleChange}
-                    placeholder="Your title/role"
+                    placeholder=""
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                   />
                 </label>
@@ -624,18 +788,32 @@ function BecomeAdvisorForm() {
                     Highest Qualification
                     <span className="text-red-500 ml-1">*</span>
                   </span>
-                  <select
-                    name="highest_qualification"
-                    value={formData.highest_qualification}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                  >
-                    <option value="diploma">Diploma</option>
-                    <option value="bachelor">Bachelor</option>
-                    <option value="master">Master</option>
-                    <option value="phd">PhD</option>
-                    <option value="degree">Other Degree</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="highest_qualification"
+                      value={formData.highest_qualification}
+                      onChange={handleChange}
+                      className="w-full border appearance-none border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                    >
+                      <option value="diploma">Diploma</option>
+                      <option value="bachelor">Bachelor</option>
+                      <option value="master">Master</option>
+                      <option value="phd">PhD</option>
+                      <option value="degree">Other Degree</option>
+                    </select>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="#000"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
                 </label>
 
                 <label className="block">
@@ -668,13 +846,33 @@ function BecomeAdvisorForm() {
                   />
                 </label>
               </div>
+              <p className="text-sm text-gray-500 mt-8">
+                In order to process your registration, we ask you to provide the
+                following information. Please note that all fields marked with
+                an asterisk (*) are required.
+              </p>
 
               <div className="flex justify-between mt-8">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-400 transition"
+                  className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold flex items-center rounded hover:bg-gray-400 transition"
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-arrow-left-icon lucide-arrow-left"
+                  >
+                    <path d="m12 19-7-7 7-7" />
+                    <path d="M19 12H5" />
+                  </svg>
                   BACK
                 </button>
                 <button
@@ -683,7 +881,21 @@ function BecomeAdvisorForm() {
                   className="px-8 py-3 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition flex items-center"
                 >
                   CONTINUE
-                  <span className="ml-2">→</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-arrow-right-icon lucide-arrow-right"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -700,12 +912,13 @@ function BecomeAdvisorForm() {
                   name="educational_certificate"
                   label="Educational Certificate"
                   accept=".pdf,.jpg,.jpeg,.png"
+                  required
                 />
 
                 <FileInput
                   name="resume"
                   label="Resume/CV"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.jpg,.jpeg,.png"
                 />
 
                 <label className="block">
@@ -713,17 +926,31 @@ function BecomeAdvisorForm() {
                     Government ID Type
                     <span className="text-red-500 ml-1">*</span>
                   </span>
-                  <select
-                    name="govt_id_type"
-                    value={formData.govt_id_type}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                    required
-                  >
-                    <option value="passport">Passport</option>
-                    <option value="aadhar">Aadhar</option>
-                    <option value="license">License</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="govt_id_type"
+                      value={formData.govt_id_type}
+                      onChange={handleChange}
+                      className="w-full border appearance-none border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                      required
+                    >
+                      <option value="passport">Passport</option>
+                      <option value="aadhar">Aadhar</option>
+                      <option value="license">License</option>
+                    </select>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="#000"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
                 </label>
 
                 <label className="block">
@@ -746,16 +973,36 @@ function BecomeAdvisorForm() {
                   name="govt_id_file"
                   label="Government ID Document"
                   accept=".pdf,.jpg,.jpeg,.png"
-                  required={true}
+                  required
                 />
               </div>
+              <p className="text-sm text-gray-500 mt-8">
+                In order to process your registration, we ask you to provide the
+                following information. Please note that all fields marked with
+                an asterisk (*) are required.
+              </p>
 
               <div className="flex justify-between mt-8">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-400 transition"
+                  className="px-8 py-3 bg-gray-300 text-gray-700 flex items-center font-semibold rounded hover:bg-gray-400 transition"
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-arrow-left-icon lucide-arrow-left"
+                  >
+                    <path d="m12 19-7-7 7-7" />
+                    <path d="M19 12H5" />
+                  </svg>
                   BACK
                 </button>
                 <button
@@ -764,7 +1011,21 @@ function BecomeAdvisorForm() {
                   className="px-8 py-3 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition flex items-center"
                 >
                   CONTINUE
-                  <span className="ml-2">→</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-arrow-right-icon lucide-arrow-right"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -781,7 +1042,7 @@ function BecomeAdvisorForm() {
                 <h4 className="text-lg font-semibold text-gray-800 mb-4">
                   Personal Information
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-gray-600">Name:</span>
                     <span className="ml-2 text-gray-800">
@@ -793,27 +1054,38 @@ function BecomeAdvisorForm() {
                     <span className="ml-2 text-gray-800">{formData.email}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Age:</span>
-                    <span className="ml-2 text-gray-800">{formData.age}</span>
-                  </div>
-                  <div>
                     <span className="font-medium text-gray-600">Phone:</span>
                     <span className="ml-2 text-gray-800">
                       {formData.phone_number}
                     </span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Address:</span>
+                    <span className="font-medium text-gray-600">Age:</span>
+                    <span className="ml-2 text-gray-800">{formData.age}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Gender:</span>
+                    <span className="ml-2 text-gray-800">
+                      {formData.gender}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="font-medium text-gray-600">Country:</span>
                     <span className="ml-2 text-gray-800">
                       {formData.country_address}
                     </span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">
-                      City/State:
-                    </span>
+                    <span className="font-medium text-gray-600">State:</span>
                     <span className="ml-2 text-gray-800">
                       {formData.state_address}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Languages Known:</span>
+                    <span className="ml-2 text-gray-800">
+                      {formData.language_preferences}
                     </span>
                   </div>
                 </div>
@@ -896,8 +1168,23 @@ function BecomeAdvisorForm() {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold rounded hover:bg-gray-400 transition"
+                  className="px-8 py-3 bg-gray-300 flex items-center text-gray-700 font-semibold rounded hover:bg-gray-400 transition"
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-arrow-left-icon lucide-arrow-left"
+                  >
+                    <path d="m12 19-7-7 7-7" />
+                    <path d="M19 12H5" />
+                  </svg>
                   BACK
                 </button>
                 <button
