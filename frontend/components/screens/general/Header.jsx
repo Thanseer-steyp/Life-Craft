@@ -8,6 +8,8 @@ import axios from "axios";
 function Header() {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+  const [advisorRequested, setAdvisorRequested] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
   const [token, setToken] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showMenu, setShowMenu] = useState(false); // State to toggle menu
@@ -29,6 +31,34 @@ function Header() {
       document.body.style.overflow = "";
     };
   }, [showMenu]);
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access");
+    setToken(accessToken);
+
+    if (accessToken) {
+      // ✅ Check profile completion
+      axios
+        .get("http://localhost:8000/api/v1/user/profile-setup/", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        .then((res) => {
+          if (res.status === 200) setHasProfile(true);
+        })
+        .catch(() => setHasProfile(false));
+
+      // ✅ Check if advisor request was submitted
+      axios
+        .get("http://localhost:8000/api/v1/user/become-advisor/", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        .then((res) => {
+          // expect backend returns { requested: true/false }
+          setAdvisorRequested(res.data.requested);
+        })
+        .catch(() => setAdvisorRequested(false));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -144,31 +174,41 @@ function Header() {
         <nav className="gap-5 hidden md:flex items-center text-black text-sm">
           <Link
             href="/"
-            className={`p-2.5 rounded-md link-hover ${pathname === "/" ? "shadow-lg -translate-y-0.5" : ""}`}
+            className={`p-2.5 rounded-md transition duration-200 hover:-translate-y-0.5 ${
+              pathname === "/" ? "shadow-lg" : ""
+            }`}
           >
             Home
           </Link>
           <Link
             href="/features"
-            className={`p-2.5 rounded-md link-hover ${pathname === "/features" ? "shadow-lg -translate-y-0.5" : ""}`}
+            className={`p-2.5 rounded-md transition duration-200 hover:-translate-y-0.5 ${
+              pathname === "/features" ? "shadow-lg" : ""
+            }`}
           >
             Features
           </Link>
           <Link
             href="/about"
-            className={`p-2.5 rounded-md link-hover ${pathname === "/about" ? "shadow-lg -translate-y-0.5" : ""}`}
+            className={`p-2.5 rounded-md transition duration-200 hover:-translate-y-0.5 ${
+              pathname === "/about" ? "shadow-lg" : ""
+            }`}
           >
             About Us
           </Link>
           <Link
             href="/reviews"
-            className={`p-2.5 rounded-md link-hover ${pathname === "/reviews" ? "shadow-lg -translate-y-0.5" : ""}`}
+            className={`p-2.5 rounded-md transition duration-200 hover:-translate-y-0.5 ${
+              pathname === "/reviews" ? "shadow-lg" : ""
+            }`}
           >
             Reviews
           </Link>
           <Link
             href="/contact"
-            className={`p-2.5 rounded-md link-hover ${pathname === "/contact" ? "shadow-lg -translate-y-0.5" : ""}`}
+            className={`p-2.5 rounded-md transition duration-200 hover:-translate-y-0.5 ${
+              pathname === "/contact" ? "shadow-lg" : ""
+            }`}
           >
             Contact Us
           </Link>
@@ -201,7 +241,7 @@ function Header() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/user-inbox"
+            href="/notifications"
             className="bg-white shadow-xl rounded-lg w-11 h-11 flex items-center justify-center hover:bg-gray-50"
           >
             <svg
@@ -223,33 +263,33 @@ function Header() {
 
           <div className="relative">
             {user ? (
-              <>
-                {/* Avatar */}
-                <div className="flex items-center gap-1">
-                  <Link
-                    href="/user-dashboard"
-                    className="px-2 py-1 bg-white shadow-xl rounded-lg flex hover:bg-gray-50"
-                  >
-                    <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-gray-100 text-white font-bold cursor-pointer select-none z-50 relative overflow-hidden">
-                      {user.profile?.profile_picture ? (
-                        <img
-                          src={`http://localhost:8000${user.profile.profile_picture}`}
-                          alt="Profile"
-                          className="w-full h-full"
-                        />
-                      ) : (
-                        user.name?.charAt(0).toUpperCase() ||
-                        user.username?.charAt(0).toUpperCase() ||
-                        "🧑"
-                      )}
-                    </div>
-                    <div className="ml-2">
-                      <p className="text-black text-sm">{user.name}</p>
-                      <p className="text-gray-500 text-xs">{userRole}</p>
-                    </div>
-                  </Link>
-                </div>
-              </>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={hasProfile ? "/user-dashboard" : "/profile-setup"}
+                  className="px-2 py-1 bg-white shadow-xl rounded-lg flex hover:bg-gray-50"
+                >
+                  <div className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-100 bg-white font-bold text-xl select-none z-50 text-black">
+                    {user.profile?.profile_picture ? (
+                      <img
+                        src={`http://localhost:8000${user.profile.profile_picture}`}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      user?.name?.[0]?.toUpperCase() ||
+                      user?.username?.[0]?.toUpperCase() ||
+                      "🧑‍💻"
+                    )}
+                  </div>
+
+                  <div className="ml-2">
+                    <p className="text-black text-sm font-medium">
+                      {user.name || user.username}
+                    </p>
+                    <p className="text-gray-500 text-xs">{userRole}</p>
+                  </div>
+                </Link>
+              </div>
             ) : (
               <Link
                 href="/authentication"
@@ -290,6 +330,7 @@ function Header() {
                 : "text-black hover:shadow-lg border-transparent hover:-translate-x-0.5"
             }`}
           >
+            
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -297,16 +338,18 @@ function Header() {
               viewBox="0 0 24 24"
               fill="none"
               stroke={pathname === "/booking-appoinment" ? "#16a34a" : "#000"}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-speech"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-stethoscope-icon lucide-stethoscope"
             >
-              <path d="M8.8 20v-4.1l1.9.2a2.3 2.3 0 0 0 2.164-2.1V8.3A5.37 5.37 0 0 0 2 8.25c0 2.8.656 3.054 1 4.55a5.77 5.77 0 0 1 .029 2.758L2 20" />
-              <path d="M19.8 17.8a7.5 7.5 0 0 0 .003-10.603" />
-              <path d="M17 15a3.5 3.5 0 0 0-.025-4.975" />
+              <path d="M11 2v2" />
+              <path d="M5 2v2" />
+              <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1" />
+              <path d="M8 15a6 6 0 0 0 12 0v-3" />
+              <circle cx="20" cy="10" r="2" />
             </svg>
-            Advisors
+            Consult an Advisor
           </Link>
 
           {/* Appointments */}
@@ -412,34 +455,38 @@ function Header() {
           </Link>
 
           {/* Become an Advisor */}
-          <Link
-            href="/advisor-registration"
-            onClick={() => setShowMenu(false)}
-            className={`flex gap-2 items-center py-2 px-4 text-sm rounded-md transition ${
-              pathname === "/advisor-registration"
-                ? "text-green-600 font-medium border-l-4 border-green-500 bg-green-50"
-                : "text-black hover:shadow-lg border-transparent hover:-translate-x-0.5"
-            }`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={pathname === "/advisor-registration" ? "#16a34a" : "#000"}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-user-plus"
+          {!advisorRequested && (
+            <Link
+              href="/advisor-registration"
+              onClick={() => setShowMenu(false)}
+              className={`flex gap-2 items-center py-2 px-4 text-sm rounded-md transition ${
+                pathname === "/advisor-registration"
+                  ? "text-green-600 font-medium border-l-4 border-green-500 bg-green-50"
+                  : "text-black hover:shadow-lg border-transparent hover:-translate-x-0.5"
+              }`}
             >
-              <circle cx="10" cy="8" r="5" />
-              <path d="M2 21a8 8 0 0 1 13.292-6" />
-              <path d="M19 16v6" />
-              <path d="M22 19h-6" />
-            </svg>
-            Become an Advisor
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={
+                  pathname === "/advisor-registration" ? "#16a34a" : "#000"
+                }
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-user-plus"
+              >
+                <circle cx="10" cy="8" r="5" />
+                <path d="M2 21a8 8 0 0 1 13.292-6" />
+                <path d="M19 16v6" />
+                <path d="M22 19h-6" />
+              </svg>
+              Become an Advisor
+            </Link>
+          )}
 
           {/* Report a Bug */}
           <Link

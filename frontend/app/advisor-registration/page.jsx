@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 
 function BecomeAdvisorForm() {
@@ -40,7 +41,7 @@ function BecomeAdvisorForm() {
     1: "Personal Details",
     2: "Professional Details",
     3: "Documents Verification",
-    4: "Preview",
+    4: "Preview & Confirmation",
   };
 
   useEffect(() => {
@@ -67,54 +68,64 @@ function BecomeAdvisorForm() {
     const { name, value, type, checked, files } = e.target;
 
     if (type === "file") {
-      // PROFILE PHOTO FILE VALIDATION
-      if (name === "profile_photo" && files[0]) {
-        const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
-        if (!allowedTypes.includes(files[0].type)) {
-          setMessage(
-            "File is not acceptable. Only PNG, JPG, and JPEG are allowed."
-          );
-          // Clear invalid file
-          setFormData((prev) => ({ ...prev, [name]: null }));
-          setUploadedFiles((prev) => {
-            const newFiles = { ...prev };
-            delete newFiles[name];
-            return newFiles;
-          });
-          e.target.value = ""; // reset file input
-          return;
-        } else {
-          setMessage(""); // clear previous error if valid
+      // FILE UPLOAD HANDLING
+      if (files && files[0]) {
+        const file = files[0];
+
+        // ✅ PROFILE PHOTO VALIDATION + PREVIEW
+        if (name === "profile_photo") {
+          const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
+          if (!allowedTypes.includes(file.type)) {
+            setMessage(
+              "File is not acceptable. Only PNG, JPG, and JPEG are allowed."
+            );
+            // Reset invalid file input
+            e.target.value = "";
+            setFormData((prev) => ({ ...prev, [name]: null }));
+            setUploadedFiles((prev) => {
+              const newFiles = { ...prev };
+              delete newFiles[name];
+              return newFiles;
+            });
+            setProfilePhotoPreview(null);
+            return;
+          }
+
+          // ✅ Generate preview for profile photo
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setProfilePhotoPreview(reader.result);
+          };
+          reader.readAsDataURL(file);
         }
-      }
 
-      // UPDATE FORM DATA AND UPLOADED FILES
-      setFormData((prev) => ({ ...prev, [name]: files[0] || null }));
-
-      if (files[0]) {
+        // ✅ Update formData and uploadedFiles state
+        setFormData((prev) => ({ ...prev, [name]: file }));
         setUploadedFiles((prev) => ({
           ...prev,
           [name]: {
-            name: files[0].name,
-            size: files[0].size,
-            type: files[0].type,
+            name: file.name,
+            size: file.size,
+            type: file.type,
           },
         }));
       } else {
+        // If no file selected (user removed file)
+        setFormData((prev) => ({ ...prev, [name]: null }));
         setUploadedFiles((prev) => {
           const newFiles = { ...prev };
           delete newFiles[name];
           return newFiles;
         });
-      }
 
-      // DISABLE PROFILE PHOTO PREVIEW
-      if (name === "profile_photo") setProfilePhotoPreview(null);
+        if (name === "profile_photo") setProfilePhotoPreview(null);
+      }
     } else if (type === "checkbox") {
+      // ✅ Checkbox toggle (for confirm_details)
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
-      // Limit age input to 2 digits
-      if (name === "age" && value.length > 2) return;
+      // ✅ Normal text/number/select fields
+      if (name === "age" && value.length > 2) return; // restrict age input
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -406,22 +417,31 @@ function BecomeAdvisorForm() {
         }
       );
 
-      console.log("Response:", response.data);
-      setMessage("Advisor request submitted successfully!");
-      router.push("/");
+      Swal.fire({
+        title: "Success!",
+        text: "Your advisor request has been submitted successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#16a34a", // nice green color
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.push("/"); // redirect after clicking OK
+        }
+      });
     } catch (err) {
-      console.error("Full error:", err);
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        JSON.stringify(err.response?.data) ||
+        err.message;
 
-      // More specific error message
-      if (err.response?.data?.detail) {
-        setMessage(`Error: ${err.response.data.detail}`);
-      } else if (err.response?.data?.message) {
-        setMessage(`Error: ${err.response.data.message}`);
-      } else if (err.response?.data) {
-        setMessage(`Error: ${JSON.stringify(err.response.data)}`);
-      } else {
-        setMessage(`Failed to submit advisor request: ${err.message}`);
-      }
+      Swal.fire({
+        title: "Error!",
+        text: `Failed to submit advisor request: ${errorMessage}`,
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#dc2626", // red
+      });
     } finally {
       setLoading(false);
     }
@@ -513,7 +533,7 @@ function BecomeAdvisorForm() {
           {currentStep === 1 && (
             <div>
               <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                Profile Information
+                Personal Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <ProfilePhotoInput
@@ -700,7 +720,7 @@ function BecomeAdvisorForm() {
           {currentStep === 2 && (
             <div>
               <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                Professional Background
+                Professional Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <label className="block">
@@ -905,7 +925,7 @@ function BecomeAdvisorForm() {
           {currentStep === 3 && (
             <div>
               <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                Educational & Professional Documents
+                Documents Verification
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FileInput
@@ -1035,14 +1055,15 @@ function BecomeAdvisorForm() {
           {currentStep === 4 && (
             <div>
               <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                Review & Confirmation
+                Preview & Confirmation
               </h3>
 
               <div className="bg-gray-50 p-6 rounded-lg mb-6">
                 <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                  Personal Information
+                  Personal Details
                 </h4>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+
+                <div className="grid grid-cols-3 text-sm gap-y-4 relative">
                   <div>
                     <span className="font-medium text-gray-600">Name:</span>
                     <span className="ml-2 text-gray-800">
@@ -1082,20 +1103,31 @@ function BecomeAdvisorForm() {
                       {formData.state_address}
                     </span>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Languages Known:</span>
+                  <div className="col-span-2">
+                    <span className="font-medium text-gray-600">
+                      Languages Known:
+                    </span>
                     <span className="ml-2 text-gray-800">
                       {formData.language_preferences}
                     </span>
                   </div>
+                  {profilePhotoPreview && (
+                    <div className="absolute right-0 -top-27.5">
+                      <img
+                        src={profilePhotoPreview}
+                        alt="Profile Preview"
+                        className="w-20 h-20 rounded-full shadow-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="bg-gray-50 p-6 rounded-lg mb-6">
                 <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                  Professional Information
+                  Professional Details
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-y-4 text-sm">
                   <div>
                     <span className="font-medium text-gray-600">
                       Advisor Type:
@@ -1113,7 +1145,9 @@ function BecomeAdvisorForm() {
                     </span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Company:</span>
+                    <span className="font-medium text-gray-600">
+                      Working at:
+                    </span>
                     <span className="ml-2 text-gray-800">
                       {formData.company || "Not provided"}
                     </span>
@@ -1140,6 +1174,65 @@ function BecomeAdvisorForm() {
                     </span>
                     <span className="ml-2 text-gray-800">
                       {formData.specialized_in || "Not provided"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">
+                      Previously worked for:
+                    </span>
+                    <span className="ml-2 text-gray-800">
+                      {formData.previous_companies || "Not provided"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                  Documents Verification
+                </h4>
+                <div className="grid grid-cols-3 gap-y-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">
+                      Educational Certificate:
+                    </span>
+                    <span className="ml-2 text-gray-800 capitalize">
+                      {formData.educational_certificate
+                        ? "Provided"
+                        : "Not provided"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">
+                      Resume/CV:
+                    </span>
+                    <span className="ml-2 text-gray-800">
+                      {formData.resume ? "Provided" : "Not provided"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">
+                      Government Id:
+                    </span>
+                    <span className="ml-2 text-gray-800 capitalize">
+                      {formData.educational_certificate
+                        ? "Provided"
+                        : "Not provided"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">
+                      Government Id Type:
+                    </span>
+                    <span className="ml-2 text-gray-800 capitalize">
+                      {formData.govt_id_type}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">
+                      Government Id No:
+                    </span>
+                    <span className="ml-2 text-gray-800">
+                      {formData.govt_id_proof_id}
                     </span>
                   </div>
                 </div>

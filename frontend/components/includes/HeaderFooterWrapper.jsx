@@ -8,7 +8,7 @@ export default function HeaderFooterWrapper({ children }) {
   const pathname = usePathname();
 
   // Routes where Header/Footer should be hidden
-  const hiddenRoutes = ["/authentication", "/advisor-dashboard"];
+  const hiddenRoutes = ["/authentication", "/advisor-dashboard", "/admin-dashboard"];
 
   // Hide for exact matches + dynamic booking/[id]
   const shouldHide =
