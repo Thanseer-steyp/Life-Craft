@@ -30,3 +30,31 @@ class Advisor(models.Model):
     def __str__(self):
         return f"{self.full_name or self.user.username} ({self.email}) as {self.advisor_type} advisor"
 
+
+
+class AdvisorAvailability(models.Model):
+    DAYS_OF_WEEK = [
+        ("monday", "Monday"),
+        ("tuesday", "Tuesday"),
+        ("wednesday", "Wednesday"),
+        ("thursday", "Thursday"),
+        ("friday", "Friday"),
+        ("saturday", "Saturday"),
+        ("sunday", "Sunday"),
+    ]
+
+    advisor = models.ForeignKey(
+        Advisor, on_delete=models.CASCADE, related_name="availabilities"
+    )
+    day = models.CharField(max_length=10, choices=DAYS_OF_WEEK, unique=True)
+    is_available = models.BooleanField(default=False)
+    total_slots = models.PositiveIntegerField(null=True, blank=True)
+    time_range = models.CharField(max_length=20, null=True, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("advisor", "day")
+
+    def __str__(self):
+        return f"{self.advisor.full_name} - {self.day.capitalize()} ({'Available' if self.is_available else 'Not Available'})"

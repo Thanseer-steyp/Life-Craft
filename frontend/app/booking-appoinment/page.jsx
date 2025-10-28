@@ -29,6 +29,9 @@ function AdvisorsPage() {
       .catch((err) => console.error(err));
   }, []);
 
+  const isAdvisorAvailable =
+    selected?.availability?.some((slot) => slot.is_available) || false;
+
   const handleAdvisorClick = (advisor) => {
     if (selected?.id === advisor.id) {
       // Clicking the same advisor closes the right panel
@@ -215,6 +218,13 @@ function AdvisorsPage() {
                     className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
                   >
                     Booking Pending...
+                  </button>
+                ) : !isAdvisorAvailable ? (
+                  <button
+                    disabled
+                    className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
+                  >
+                    Not Available
                   </button>
                 ) : bookingStatus === "accepted" ? (
                   <button
@@ -481,6 +491,73 @@ function AdvisorsPage() {
                   </div>
                 </div>
               </div>
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Weekly Availability
+                </h3>
+
+                <div className="bg-gray-50 rounded-xl">
+                  {[
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday",
+                  ].map((dayName, index) => {
+                    // ✅ Your helper functions included inside
+
+                    const slot = selected.availability.find(
+                      (s) => s.day === dayName
+                    ) || {
+                      day: dayName,
+                      is_available: false,
+                      total_slots: 0,
+                      time_range: "",
+                    };
+
+                    return (
+                      <div
+                        key={dayName}
+                        className={`flex items-center justify-between p-3 ${
+                          index !== 6 ? "border-b border-gray-200" : ""
+                        }`}
+                      >
+                        {/* Left side */}
+                        <div className="flex items-center">
+                          <div
+                            className={`w-3 h-3 rounded-full mr-3 ${
+                              slot.is_available ? "bg-green-500" : "bg-red-500"
+                            }`}
+                          ></div>
+                          <span className="font-medium text-gray-800 capitalize min-w-24">
+                            {slot.day}
+                          </span>
+                        </div>
+
+                        {/* Right side */}
+                        <div className="flex items-center gap-4">
+                          {slot.is_available ? (
+                            <>
+                              <span className="text-sm text-gray-600">
+                                {slot.time_range}
+                              </span>
+                              <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
+                                {slot.total_slots} slots
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-400">
+                              Unavailable
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
@@ -497,5 +574,4 @@ function AdvisorsPage() {
   );
 }
 
-
-export default AdvisorsPage
+export default AdvisorsPage;

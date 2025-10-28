@@ -75,7 +75,6 @@ function Header() {
           }
         );
         setUser(res.data);
-        console.log(res.data);
       } catch (err) {
         console.error(err);
         setUser(null);
@@ -91,7 +90,7 @@ function Header() {
 
       try {
         const res = await axios.get(
-          "http://localhost:8000/api/v1/advisors-list/"
+          "http://localhost:8000/api/v1/advisor/advisors-list/"
         );
         const advisors = res.data;
 

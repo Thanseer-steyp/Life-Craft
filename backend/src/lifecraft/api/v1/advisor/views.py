@@ -1,9 +1,9 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from advisor.models import Advisor
+from advisor.models import Advisor,AdvisorAvailability
 from rest_framework import permissions, status
-from .serializers import AdvisorSerializer
+from .serializers import AdvisorSerializer,AdvisorAvailabilitySerializer
 from user.models import Appointment
 from chatroom.models import ChatRoom
 from api.v1.user.serializers import AppointmentSerializer
@@ -78,3 +78,38 @@ class ManageAppointmentView(APIView):
 
         else:
             return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+class AdvisorAvailabilityView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            advisor = Advisor.objects.get(user=request.user)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Not an advisor"}, status=403)
+
+        availabilities = AdvisorAvailability.objects.filter(advisor=advisor)
+        serializer = AdvisorAvailabilitySerializer(availabilities, many=True)
+        return Response(serializer.data, status=200)
+
+    def put(self, request):
+        try:
+            advisor = Advisor.objects.get(user=request.user)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Not an advisor"}, status=403)
+
+        day = request.data.get("day")
+        if not day:
+            return Response({"error": "Day field is required"}, status=400)
+
+        availability, _ = AdvisorAvailability.objects.get_or_create(
+            advisor=advisor, day=day
+        )
+
+        serializer = AdvisorAvailabilitySerializer(availability, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": f"{day.capitalize()} availability updated"}, status=200)
+        return Response(serializer.errors, status=400)

@@ -385,3 +385,10 @@ select:-webkit-autofill {
   -webkit-text-fill-color: #0f172a !important; /* Tailwind slate-900 for text color */
   transition: background-color 5000s ease-in-out 0s; /* prevent flicker */
 }
+
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
