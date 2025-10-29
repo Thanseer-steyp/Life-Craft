@@ -57,4 +57,4 @@ class AdvisorAvailability(models.Model):
         unique_together = ("advisor", "day")
 
     def __str__(self):
-        return f"{self.advisor.full_name} - {self.day.capitalize()} ({'Available' if self.is_available else 'Not Available'})"
+        return f"{self.advisor.full_name} - {self.advisor.advisor_type.capitalize()} Advisor - {self.day.capitalize()} ({'Available' if self.is_available else 'Not Available'})"

@@ -15,6 +15,9 @@ function AuthPage() {
   const [cooldown, setCooldown] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -25,9 +28,7 @@ function AuthPage() {
     newPassword: "",
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  
 
   useEffect(() => {
     setMounted(true);
@@ -119,6 +120,7 @@ function AuthPage() {
 
         // 🔹 Admin check
         if (formData.email === "admin.lifecraft@gmail.com") {
+          localStorage.setItem("role", "admin");
           router.push("/admin-dashboard");
         } else {
           // 🔹 Advisor check
@@ -134,8 +136,10 @@ function AuthPage() {
           );
 
           if (isAdvisor) {
+            localStorage.setItem("role", "advisor");
             router.push("/advisor-dashboard");
           } else {
+            localStorage.setItem("role", "user");
             router.push("/");
           }
         }
@@ -172,6 +176,7 @@ function AuthPage() {
 
           // 🔹 Admin check
           if (formData.email === "admin.lifecraft@gmail.com") {
+            localStorage.setItem("role", "admin");
             router.push("/admin-dashboard");
           } else {
             // 🔹 Advisor check
@@ -187,8 +192,10 @@ function AuthPage() {
             );
 
             if (isAdvisor) {
+              localStorage.setItem("role", "advisor");
               router.push("/advisor-dashboard");
             } else {
+              localStorage.setItem("role", "user");
               router.push("/");
             }
           }
@@ -624,7 +631,10 @@ function AuthPage() {
                   {/* Login */}
                   {isLogin && !resetPassword && (
                     <>
-                      <div className="w-full relative field-group" key={useOTP ? "email-otp" : "email-password"}>
+                      <div
+                        className="w-full relative field-group"
+                        key={useOTP ? "email-otp" : "email-password"}
+                      >
                         <input
                           type="email"
                           name="email"
@@ -734,7 +744,7 @@ function AuthPage() {
                         </div>
                       )}
                       {useOTP && otpSent && (
-                        <div className="field-group animate-scaleIn relative w-full" >
+                        <div className="field-group animate-scaleIn relative w-full">
                           <input
                             type="text"
                             placeholder=" "
@@ -844,14 +854,14 @@ function AuthPage() {
               {/* Footer Links */}
               <div className="px-8">
                 <div
-  className={`flex items-center ${
-    resetPassword
-      ? "justify-center border-y py-3 border-slate-300 mb-5"
-      : isLogin
-      ? "justify-between border-y py-3 border-slate-300 mb-5"
-      : "justify-center"
-  }`}
->
+                  className={`flex items-center ${
+                    resetPassword
+                      ? "justify-center border-y py-3 border-slate-300 mb-5"
+                      : isLogin
+                      ? "justify-between border-y py-3 border-slate-300 mb-5"
+                      : "justify-center"
+                  }`}
+                >
                   {resetPassword && (
                     <button
                       onClick={() => {

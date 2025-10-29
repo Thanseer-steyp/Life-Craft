@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 
 function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [advisorRequested, setAdvisorRequested] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
@@ -19,6 +21,7 @@ function Header() {
     const storedToken = localStorage.getItem("access");
     setToken(storedToken);
   }, []);
+
   useEffect(() => {
     if (showMenu) {
       document.body.style.overflow = "hidden"; // stop scrolling
@@ -127,7 +130,8 @@ function Header() {
   const handleLogout = () => {
     localStorage.clear();
     window.dispatchEvent(new Event("login-status-changed"));
-    window.location.reload();
+    router.push("/authentication");
+    //window.location.reload();
   };
 
   return (
@@ -329,7 +333,6 @@ function Header() {
                 : "text-black hover:shadow-lg border-transparent hover:-translate-x-0.5"
             }`}
           >
-            
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
