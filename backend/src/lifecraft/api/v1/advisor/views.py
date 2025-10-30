@@ -40,29 +40,24 @@ class ManageAppointmentView(APIView):
             advisor = Advisor.objects.get(user=request.user)
         except Advisor.DoesNotExist:
             return Response({"error": "Not an advisor"}, status=status.HTTP_403_FORBIDDEN)
-
-        # Get the appointment for this advisor
         try:
             appointment = Appointment.objects.get(id=appointment_id, advisor=advisor)
         except Appointment.DoesNotExist:
             return Response({"error": "Appointment not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        action = request.data.get("action")  # "accept" or "decline"
+        action = request.data.get("action")
 
         if action == "decline":
             appointment.status = "declined"
             appointment.decline_message = request.data.get("decline_message", "")
-            appointment.save()  # triggers post_save (chatroom not created for declined)
+            appointment.save()  
             return Response({"message": "Appointment declined"}, status=status.HTTP_200_OK)
 
         elif action == "accept":
             appointment.status = "accepted"
-            appointment.preferred_day = request.data.get("preferred_day")
             appointment.preferred_time = request.data.get("preferred_time")
-            appointment.communication_method = request.data.get("communication_method")
-            appointment.save()  # triggers post_save signal
-
-            # Safely get or create the chatroom
+            appointment.save() 
+            
             chatroom, created = ChatRoom.objects.get_or_create(
                 appointment=appointment,
                 defaults={

@@ -1,4 +1,6 @@
 "use client";
+import { AnimatePresence, motion } from "framer-motion";
+import PulseLoader from "react-spinners/PulseLoader";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -11,6 +13,13 @@ function AdvisorsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState([]);
   const router = useRouter();
+
+  // New states for day-selection booking
+  const [showDaySelect, setShowDaySelect] = useState(false);
+  const [availableDates, setAvailableDates] = useState([]); // {day, date}
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [communicationMethod, setCommunicationMethod] = useState("");
+  const [isBooking, setIsBooking] = useState(false);
 
   // Fetch advisors
   useEffect(() => {
@@ -60,8 +69,8 @@ function AdvisorsPage() {
       .catch(() => setBookingStatus(null));
   }, [selected]);
 
-  // Handle booking
-  const handleBook = async (advisorId) => {
+  // ---------- Booking: open modal showing upcoming dates (derived from advisor.availability) ----------
+  const handleBook = (advisor) => {
     const token = localStorage.getItem("access");
 
     if (!token) {
@@ -70,19 +79,110 @@ function AdvisorsPage() {
       return;
     }
 
+    if (!advisor || !advisor.availability) {
+      alert("Advisor availability not found.");
+      return;
+    }
+
+    // Extract available weekdays from advisor data
+    const availableDays = advisor.availability
+      .filter((slot) => slot.is_available)
+      .map((slot) => slot.day.toLowerCase());
+
+    if (availableDays.length === 0) {
+      alert("This advisor has no available days.");
+      return;
+    }
+
+    // Generate upcoming dates (next 3 occurrences per weekday, within next 21 days)
+    const today = new Date();
+    const daysMap = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
+
+    const upcomingDates = [];
+
+    // We'll collect up to 3 occurrences per available weekday
+    availableDays.forEach((dayName) => {
+      const targetWeekday = daysMap[dayName];
+      if (typeof targetWeekday === "undefined") return;
+
+      // Iterate next 21 days and pick matches
+      let count = 0;
+      for (let i = 1; i <= 70 && count < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        if (d.getDay() === targetWeekday) {
+          upcomingDates.push({
+            day: dayName,
+            date: d.toISOString().split("T")[0],
+          });
+          count++;
+        }
+      }
+    });
+
+    // Sort by date ascending for predictable order
+    upcomingDates.sort((a, b) => (a.date > b.date ? 1 : -1));
+
+    setSelected(advisor);
+    setAvailableDates(upcomingDates.slice(0, 9)); // limit to 9 combined dates
+    setSelectedDay(null);
+    setCommunicationMethod("");
+    setShowDaySelect(true);
+  };
+
+  // Confirm booking: send advisor_id and preferred_day (YYYY-MM-DD) to backend
+  const confirmBooking = async () => {
+    if (!selectedDay) {
+      alert("Please select a date first.");
+      return;
+    }
+    if (!communicationMethod) {
+      alert("Please select a communication method.");
+      return;
+    }
+
+    const token = localStorage.getItem("access");
+    if (!token) {
+      alert("Please login to book an appointment.");
+      router.push("/authentication");
+      return;
+    }
+
     try {
+      setIsBooking(true);
       await axios.post(
         "http://localhost:8000/api/v1/user/book-appointment/",
-        { advisor_id: advisorId },
+        {
+          advisor_id: selected.id,
+          preferred_day: selectedDay,
+          communication_method: communicationMethod,
+        },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      alert("Appointment request sent!");
+      await new Promise((res) => setTimeout(res, 1000));
+      alert(`Appointment booked successfully for ${selectedDay}`);
+      setShowDaySelect(false);
+      setSelectedDay(null);
       setSelected(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to book appointment");
+      const errMsg =
+        err?.response?.data?.error ||
+        err?.response?.data ||
+        "Failed to book appointment";
+      alert(errMsg);
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -104,7 +204,10 @@ function AdvisorsPage() {
             {categories.map((category, index) => (
               <button
                 key={index}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setSelected(null); // 🔹 Close right panel when switching filter
+                }}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition border ${
                   selectedCategory === category
                     ? "bg-cyan-500 text-white border-cyan-500"
@@ -157,16 +260,25 @@ function AdvisorsPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="text-xs text-gray-600 mb-2">
-                    Available Today
+                <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      • Available on:{" "}
+                      {advisor.availability
+                        ?.filter((a) => a.is_available)
+                        .map(
+                          (a) => a.day.charAt(0).toUpperCase() + a.day.slice(1)
+                        )
+                        .join(", ") || "No availability"}
+                    </span>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">
                       • Online Consultation
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">
                       • {advisor.language_preferences}
                     </span>
@@ -212,35 +324,37 @@ function AdvisorsPage() {
                   </div>
                 </div>
 
-                {bookingStatus === "pending" ? (
-                  <button
-                    disabled
-                    className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
-                  >
-                    Booking Pending...
-                  </button>
-                ) : !isAdvisorAvailable ? (
-                  <button
-                    disabled
-                    className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
-                  >
-                    Not Available
-                  </button>
-                ) : bookingStatus === "accepted" ? (
-                  <button
-                    onClick={() => handleBook(selected.id)}
-                    className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition"
-                  >
-                    Book Another Appointment
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleBook(selected.id)}
-                    className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition"
-                  >
-                    Book Appointment
-                  </button>
-                )}
+                <div>
+                  {bookingStatus === "pending" ? (
+                    <button
+                      disabled
+                      className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
+                    >
+                      Booking Pending...
+                    </button>
+                  ) : !isAdvisorAvailable ? (
+                    <button
+                      disabled
+                      className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
+                    >
+                      Not Available
+                    </button>
+                  ) : bookingStatus === "accepted" ? (
+                    <button
+                      onClick={() => handleBook(selected)}
+                      className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition"
+                    >
+                      Book Another Appointment
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleBook(selected)}
+                      className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition"
+                    >
+                      Book Appointment
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Details Grid */}
@@ -271,36 +385,38 @@ function AdvisorsPage() {
                     </h6>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <div className="flex items-center justify-center shadow-lg p-2 rounded-xl bg-gray-50">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#6B7280"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-telescope-icon lucide-telescope"
-                    >
-                      <path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44" />
-                      <path d="m13.56 11.747 4.332-.924" />
-                      <path d="m16 21-3.105-6.21" />
-                      <path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z" />
-                      <path d="m6.158 8.633 1.114 4.456" />
-                      <path d="m8 21 3.105-6.21" />
-                      <circle cx="12" cy="13" r="2" />
-                    </svg>
+                {selected.specialized_in && (
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center shadow-lg p-2 rounded-xl bg-gray-50">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#6B7280"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-telescope-icon lucide-telescope"
+                      >
+                        <path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44" />
+                        <path d="m13.56 11.747 4.332-.924" />
+                        <path d="m16 21-3.105-6.21" />
+                        <path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z" />
+                        <path d="m6.158 8.633 1.114 4.456" />
+                        <path d="m8 21 3.105-6.21" />
+                        <circle cx="12" cy="13" r="2" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-gray-400 text-xs">Specialized in</p>
+                      <h6 className="capitalize text-gray-800 text-sm">
+                        {selected.specialized_in}
+                      </h6>
+                    </div>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-gray-400 text-xs">Specialized in</p>
-                    <h6 className="capitalize text-gray-800 text-sm">
-                      {selected.specialized_in}
-                    </h6>
-                  </div>
-                </div>
+                )}
                 <div className="flex items-center">
                   <div className="flex items-center justify-center shadow-lg p-2 rounded-xl bg-gray-50">
                     <svg
@@ -570,6 +686,101 @@ function AdvisorsPage() {
           )}
         </div>
       </div>
+
+      {/* Select Day Modal */}
+      {showDaySelect && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-100 p-6 rounded-xl shadow-lg w-96">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
+              Select Day & Communication Method
+            </h2>
+
+            {/* Available dates list */}
+            <div className="max-h-48 overflow-y-auto space-y-2 mb-4">
+              {availableDates.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center">
+                  No available days found.
+                </p>
+              ) : (
+                availableDates.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedDay(item.date)}
+                    className={`p-3 rounded-lg border cursor-pointer transition text-black ${
+                      selectedDay === item.date
+                        ? "bg-cyan-500  border-cyan-500"
+                        : "border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="capitalize">{item.day}</span> - {item.date}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Communication method selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Choose Communication Method:
+              </label>
+              <select
+                value={communicationMethod}
+                onChange={(e) => setCommunicationMethod(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black"
+              >
+                <option value="">-- Select Method --</option>
+                <option value="google_meet">Google Meet</option>
+                <option value="zoom">Zoom</option>
+                <option value="phone">Phone Call</option>
+                <option value="whatsapp">Whatsapp Video Call</option>
+              </select>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDaySelect(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBooking}
+                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <AnimatePresence>
+        {isBooking && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[9999]"
+          >
+            <div className="flex flex-col items-center justify-center space-y-4 text-center bg-white h-1/2 p-8 rounded-xl">
+              <PulseLoader color="#06b6d4" margin={4} size={10} />
+
+              <h3 className="text-lg font-semibold text-gray-800">
+                Booking Appointment...
+              </h3>
+
+              <motion.div
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-sm text-gray-500"
+              >
+                Please wait while we confirm your booking and send details.
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

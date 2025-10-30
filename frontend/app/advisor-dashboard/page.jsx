@@ -10,6 +10,14 @@ function AdvisorDashboard() {
   const [acceptingId, setAcceptingId] = useState(null);
   const [decliningId, setDecliningId] = useState(null);
   const [formData, setFormData] = useState({});
+  const [editingDays, setEditingDays] = useState({}); // track edit state per day
+
+  const toggleEdit = (dayName) => {
+    setEditingDays((prev) => ({
+      ...prev,
+      [dayName]: !prev[dayName],
+    }));
+  };
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const router = useRouter();
 
@@ -70,7 +78,9 @@ function AdvisorDashboard() {
   const saveAvailability = (dayData) => {
     if (dayData.is_available) {
       if (!dayData.total_slots || !dayData.time_range.trim()) {
-        alert("Please fill in both 'Total Slots' and 'Time Range' before saving.");
+        alert(
+          "Please fill in both 'Total Slots' and 'Time Range' before saving."
+        );
         return;
       }
     }
@@ -112,16 +122,25 @@ function AdvisorDashboard() {
   };
 
   const submitAccept = async (id) => {
+    const preferredTime = formData[id]?.preferred_time;
+
+    if (!preferredTime || preferredTime.trim() === "") {
+      alert("Please select a preferred time before accepting the appointment.");
+      return;
+    }
+
     try {
       await axios.post(
         `http://localhost:8000/api/v1/advisor/manage-appointment/${id}/`,
         {
           action: "accept",
-          preferred_day: formData[id]?.preferred_day,
-          preferred_time: formData[id]?.preferred_time,
-          communication_method: formData[id]?.communication_method,
+          preferred_time: preferredTime,
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("access")}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+        }
       );
       setAcceptingId(null);
       fetchAppointments();
@@ -138,7 +157,11 @@ function AdvisorDashboard() {
           action: "decline",
           decline_message: formData[id]?.decline_message,
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("access")}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+        }
       );
       setDecliningId(null);
       fetchAppointments();
@@ -194,7 +217,9 @@ function AdvisorDashboard() {
                   className="bg-white p-6 rounded-xl shadow-md border border-gray-200"
                 >
                   <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-lg font-semibold text-gray-800">{appt.user_name}</h2>
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      {appt.user_name}
+                    </h2>
                     <span
                       className={`font-medium px-3 py-1 rounded-full text-sm ${
                         appt.status === "pending"
@@ -214,9 +239,18 @@ function AdvisorDashboard() {
 
                   {appt.status === "accepted" && (
                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4 text-gray-700 text-sm">
-                      <p><span className="font-medium">Day:</span> {appt.preferred_day}</p>
-                      <p><span className="font-medium">Time:</span> {appt.preferred_time}</p>
-                      <p><span className="font-medium">Method:</span> {appt.communication_method}</p>
+                      <p>
+                        <span className="font-medium">Day:</span>{" "}
+                        {appt.preferred_day}
+                      </p>
+                      <p>
+                        <span className="font-medium">Time:</span>{" "}
+                        {appt.preferred_time}
+                      </p>
+                      <p>
+                        <span className="font-medium">Method:</span>{" "}
+                        {appt.communication_method}
+                      </p>
                       <div className="sm:col-span-3 mt-3">
                         <button
                           onClick={() => router.push(`/chat/${appt.id}`)}
@@ -241,32 +275,40 @@ function AdvisorDashboard() {
                     <div className="mt-4 space-y-3">
                       {acceptingId === appt.id && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <input
-                            type="date"
-                            className="border rounded px-3 py-2 w-full text-gray-800"
-                            onChange={(e) =>
-                              handleChange(appt.id, "preferred_day", e.target.value)
-                            }
-                          />
+                          {/* Preferred Day - Read Only */}
+                          <div className="border rounded px-3 py-2 w-full bg-gray-100 text-gray-700">
+                            <p>
+                              <span className="font-medium">
+                                Preferred Day:
+                              </span>{" "}
+                              {appt.preferred_day || "Not specified"}
+                            </p>
+                          </div>
+
+                          {/* Preferred Time - Editable */}
                           <input
                             type="time"
                             className="border rounded px-3 py-2 w-full text-gray-800"
                             onChange={(e) =>
-                              handleChange(appt.id, "preferred_time", e.target.value)
+                              handleChange(
+                                appt.id,
+                                "preferred_time",
+                                e.target.value
+                              )
                             }
                           />
-                          <select
-                            className="border rounded px-3 py-2 w-full text-gray-800"
-                            onChange={(e) =>
-                              handleChange(appt.id, "communication_method", e.target.value)
-                            }
-                          >
-                            <option value="">Select Method</option>
-                            <option value="google_meet">Google Meet</option>
-                            <option value="whatsapp">WhatsApp Video Call</option>
-                            <option value="zoom">Zoom</option>
-                            <option value="phone">Phone Call</option>
-                          </select>
+
+                          {/* Communication Method - Read Only */}
+                          <div className="border rounded px-3 py-2 w-full bg-gray-100 text-gray-700">
+                            <p>
+                              <span className="font-medium">Method:</span>{" "}
+                              {appt.communication_method
+                                ?.replaceAll("_", " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+                                "Not specified"}
+                            </p>
+                          </div>
+
                           <div className="sm:col-span-3 flex gap-3 mt-2">
                             <button
                               onClick={() => submitAccept(appt.id)}
@@ -290,7 +332,11 @@ function AdvisorDashboard() {
                             placeholder="Reason for declining"
                             className="border rounded p-3 w-full text-gray-800"
                             onChange={(e) =>
-                              handleChange(appt.id, "decline_message", e.target.value)
+                              handleChange(
+                                appt.id,
+                                "decline_message",
+                                e.target.value
+                              )
                             }
                           />
                           <div className="flex gap-3">
@@ -357,11 +403,12 @@ function AdvisorDashboard() {
 
                 const start = parseTime(startTime);
                 const end = parseTime(endTime);
+                const isEditing = editingDays[day.day] || false;
 
                 return (
                   <div
                     key={day.day}
-                    className="flex gap-4 items-center bg-white border border-gray-100 rounded-lg p-3"
+                    className="flex flex-wrap gap-4 items-center bg-white border border-gray-100 rounded-lg p-3"
                   >
                     <div className="flex w-[170px] items-center">
                       <span className="capitalize font-medium text-gray-800 flex-1">
@@ -371,6 +418,7 @@ function AdvisorDashboard() {
                       <select
                         className="border rounded p-2 text-gray-800"
                         value={day.is_available ? "yes" : "no"}
+                        disabled={!isEditing}
                         onChange={(e) =>
                           updateAvailability(
                             day.day,
@@ -389,16 +437,27 @@ function AdvisorDashboard() {
                         <input
                           type="number"
                           placeholder="Total slots"
-                          className="border rounded p-2 text-gray-800 no-arrows"
+                          className={`border rounded p-2 text-gray-800 no-arrows ${
+                            !isEditing && "bg-gray-100 cursor-not-allowed"
+                          }`}
                           value={day.total_slots || ""}
+                          disabled={!isEditing}
                           onChange={(e) =>
-                            updateAvailability(day.day, "total_slots", e.target.value)
+                            updateAvailability(
+                              day.day,
+                              "total_slots",
+                              e.target.value
+                            )
                           }
                         />
 
                         <div className="flex flex-wrap items-center gap-2">
                           {/* Start Time */}
-                          <div className="border text-gray-800 rounded flex items-center">
+                          <div
+                            className={`border text-gray-800 rounded flex items-center ${
+                              !isEditing && "bg-gray-100"
+                            }`}
+                          >
                             <input
                               type="number"
                               min="1"
@@ -406,23 +465,33 @@ function AdvisorDashboard() {
                               placeholder="Start"
                               className="px-2 py-2 w-20 no-arrows"
                               value={start.hour || ""}
+                              disabled={!isEditing}
                               onChange={(e) => {
                                 const newStart = `${e.target.value} ${start.period}`;
                                 const newRange = `${newStart} - ${
                                   end.hour ? `${end.hour} ${end.period}` : ""
                                 }`;
-                                updateAvailability(day.day, "time_range", newRange);
+                                updateAvailability(
+                                  day.day,
+                                  "time_range",
+                                  newRange
+                                );
                               }}
                             />
                             <select
                               className="px-2 py-2"
                               value={start.period}
+                              disabled={!isEditing}
                               onChange={(e) => {
                                 const newStart = `${start.hour} ${e.target.value}`;
                                 const newRange = `${newStart} - ${
                                   end.hour ? `${end.hour} ${end.period}` : ""
                                 }`;
-                                updateAvailability(day.day, "time_range", newRange);
+                                updateAvailability(
+                                  day.day,
+                                  "time_range",
+                                  newRange
+                                );
                               }}
                             >
                               <option value="AM">AM</option>
@@ -433,7 +502,11 @@ function AdvisorDashboard() {
                           <span className="text-gray-600 font-medium">to</span>
 
                           {/* End Time */}
-                          <div className="border text-gray-800 rounded flex items-center">
+                          <div
+                            className={`border text-gray-800 rounded flex items-center ${
+                              !isEditing && "bg-gray-100"
+                            }`}
+                          >
                             <input
                               type="number"
                               min="1"
@@ -441,23 +514,37 @@ function AdvisorDashboard() {
                               placeholder="End"
                               className="px-2 py-2 w-20 no-arrows"
                               value={end.hour || ""}
+                              disabled={!isEditing}
                               onChange={(e) => {
                                 const newEnd = `${e.target.value} ${end.period}`;
                                 const newRange = `${
-                                  start.hour ? `${start.hour} ${start.period}` : ""
+                                  start.hour
+                                    ? `${start.hour} ${start.period}`
+                                    : ""
                                 } - ${newEnd}`;
-                                updateAvailability(day.day, "time_range", newRange);
+                                updateAvailability(
+                                  day.day,
+                                  "time_range",
+                                  newRange
+                                );
                               }}
                             />
                             <select
                               className="px-2 py-2"
                               value={end.period}
+                              disabled={!isEditing}
                               onChange={(e) => {
                                 const newEnd = `${end.hour} ${e.target.value}`;
                                 const newRange = `${
-                                  start.hour ? `${start.hour} ${start.period}` : ""
+                                  start.hour
+                                    ? `${start.hour} ${start.period}`
+                                    : ""
                                 } - ${newEnd}`;
-                                updateAvailability(day.day, "time_range", newRange);
+                                updateAvailability(
+                                  day.day,
+                                  "time_range",
+                                  newRange
+                                );
                               }}
                             >
                               <option value="AM">AM</option>
@@ -469,12 +556,24 @@ function AdvisorDashboard() {
                     )}
 
                     <div className="flex-1 flex justify-end">
-                      <button
-                        onClick={() => saveAvailability(day)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                      >
-                        Save
-                      </button>
+                      {isEditing ? (
+                        <button
+                          onClick={() => {
+                            saveAvailability(day);
+                            toggleEdit(day.day);
+                          }}
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                        >
+                          Save
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => toggleEdit(day.day)}
+                          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+                        >
+                          Edit
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

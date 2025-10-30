@@ -107,30 +107,33 @@ class BookAppointmentView(APIView):
 
     def post(self, request):
         advisor_id = request.data.get("advisor_id")
+        preferred_day = request.data.get("preferred_day")
+        communication_method = request.data.get("communication_method")  # ✅ get from request
+
         try:
             advisor = Advisor.objects.get(id=advisor_id)
         except Advisor.DoesNotExist:
             return Response({"error": "Advisor not found"}, status=404)
 
+        # ✅ Create appointment with preferred_day
         appointment = Appointment.objects.create(
             user=request.user,
             advisor=advisor,
+            preferred_day=preferred_day,
+            communication_method=communication_method,  # ✅ save selected date
         )
 
-        
-        
+        # ✅ Send confirmation email
         send_mail(
             subject="Appointment Request Confirmation",
             message=f"""
             Dear {request.user.get_full_name() or request.user.username},
 
             Your appointment request with advisor {advisor.user.get_full_name() or advisor.user.username} 
-            has been successfully submitted.
+            has been successfully submitted for {preferred_day} via {communication_method}.
 
             Our team or your advisor will reach out to confirm the exact schedule shortly.  
             Please keep an eye on your email for further updates.
-
-            Thank you for choosing our platform to connect with trusted advisors.
 
             Best regards,  
             The Support Team
@@ -140,8 +143,8 @@ class BookAppointmentView(APIView):
             fail_silently=False,
         )
 
-
         return Response(AppointmentSerializer(appointment).data, status=201)
+
     
 class CheckAppointmentStatusView(APIView):
     permission_classes = [IsAuthenticated]
