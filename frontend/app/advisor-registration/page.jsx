@@ -9,7 +9,7 @@ function BecomeAdvisorForm() {
   const [formData, setFormData] = useState({
     profile_photo: null,
     full_name: "",
-    age: "",
+    dob_year: "",
     gender: "Male",
     email: "",
     phone_number: "",
@@ -125,14 +125,14 @@ function BecomeAdvisorForm() {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       // ✅ Normal text/number/select fields
-      if (name === "age" && value.length > 2) return; // restrict age input
+      if (name === "dob_year" && value.length > 4) return; // restrict age input
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const initialFormData = {
     profile_photo: null,
-    age: "",
+    dob_year: "",
     gender: "Male",
     full_name: "",
     email: "",
@@ -172,7 +172,7 @@ function BecomeAdvisorForm() {
   const requiredFieldsByStep = {
     1: [
       "profile_photo",
-      "age",
+      "dob_year",
       "gender",
       "language_preferences",
       "phone_number",
@@ -356,7 +356,7 @@ function BecomeAdvisorForm() {
 
     const requiredFields = [
       "profile_photo",
-      "age",
+      "dob_year",
       "gender",
       "language_preferences",
       "phone_number",
@@ -570,16 +570,14 @@ function BecomeAdvisorForm() {
 
                 <label className="block">
                   <span className="text-gray-700 text-sm font-medium mb-2 block">
-                    Age<span className="text-red-500 ml-1">*</span>
+                    DOB Year<span className="text-red-500 ml-1">*</span>
                   </span>
                   <input
                     type="number"
-                    name="age"
-                    value={formData.age}
+                    name="dob_year"
+                    value={formData.dob_year}
                     onChange={handleChange}
-                    placeholder="20-65"
-                    min="20"
-                    max="65"
+                    placeholder=""
                     className="w-full border border-gray-300 rounded px-4 py-2 text-gray-700 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                     required
                   />
@@ -1081,8 +1079,11 @@ function BecomeAdvisorForm() {
                     </span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Age:</span>
-                    <span className="ml-2 text-gray-800">{formData.age}</span>
+                    <span className="font-medium text-gray-600">Year/Age:</span>
+                    <span className="ml-2 text-gray-800">
+                      {formData.dob_year} (
+                      {new Date().getFullYear() - formData.dob_year} years)
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Gender:</span>

@@ -91,7 +91,7 @@ class AdvisorRequestSerializer(serializers.ModelSerializer):
             "id",
             "profile_photo",
             "full_name",
-            "age",
+            "dob_year",
             "gender",
             "email",
             "phone_number",

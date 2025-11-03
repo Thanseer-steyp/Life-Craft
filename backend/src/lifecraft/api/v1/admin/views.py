@@ -34,7 +34,7 @@ class AdminAdvisorRequestsView(APIView):
                 user=advisor_request.user,
                 profile_photo=advisor_request.profile_photo,
                 full_name=advisor_request.full_name,
-                age=advisor_request.age,
+                dob_year=advisor_request.dob_year,
                 gender=advisor_request.gender,
                 email=advisor_request.email,
                 phone_number=advisor_request.phone_number,

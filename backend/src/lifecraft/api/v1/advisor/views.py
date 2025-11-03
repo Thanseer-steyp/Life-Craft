@@ -108,3 +108,24 @@ class AdvisorAvailabilityView(APIView):
             serializer.save()
             return Response({"message": f"{day.capitalize()} availability updated"}, status=200)
         return Response(serializer.errors, status=400)
+
+
+class AdvisorFeeUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        try:
+            advisor = Advisor.objects.get(user=request.user)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Not an advisor"}, status=status.HTTP_403_FORBIDDEN)
+
+        fee = request.data.get("consultation_fee")
+        if fee is None:
+            return Response({"error": "Consultation fee is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            advisor.consultation_fee = float(fee)
+            advisor.save()
+            return Response({"message": "Consultation fee updated successfully", "consultation_fee": advisor.consultation_fee}, status=status.HTTP_200_OK)
+        except ValueError:
+            return Response({"error": "Invalid fee format"}, status=status.HTTP_400_BAD_REQUEST)

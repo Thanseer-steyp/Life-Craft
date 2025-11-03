@@ -136,8 +136,8 @@ if platform.system() != "Windows":   # only enable real email sending on non-Win
     EMAIL_HOST = "smtp.gmail.com"
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = "lifecraft.dev@gmail.com"
-    EMAIL_HOST_PASSWORD = "vixb wagy dcgx muax"
+    EMAIL_HOST_USER = "noreply.lifecraft@gmail.com"
+    EMAIL_HOST_PASSWORD = "tupp rqej qjgb lwkg"
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 else:
     # On Windows (development), don't send actual emails

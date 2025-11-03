@@ -5,7 +5,7 @@ class Advisor(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     profile_photo = models.ImageField(upload_to="advisor_photos/", null=True, blank=True)
     full_name = models.CharField(max_length=255, null=True, blank=True)
-    age = models.PositiveIntegerField(null=True, blank=True)
+    dob_year = models.PositiveIntegerField(null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
@@ -26,6 +26,8 @@ class Advisor(models.Model):
     govt_id_file = models.FileField(upload_to="advisor_ids/", null=True, blank=True)
     confirm_details = models.BooleanField(default=False)
     submitted_at = models.DateTimeField(auto_now_add=True)
+
+    consultation_fee = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"{self.full_name or self.user.username} ({self.email}) as {self.advisor_type} advisor"

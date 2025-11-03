@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
 import PulseLoader from "react-spinners/PulseLoader";
+import { toast, ToastContainer } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -74,13 +75,13 @@ function AdvisorsPage() {
     const token = localStorage.getItem("access");
 
     if (!token) {
-      alert("Please login to book an appointment.");
+      toast.warning("Please login to book an appointment.");
       router.push("/authentication");
       return;
     }
 
     if (!advisor || !advisor.availability) {
-      alert("Advisor availability not found.");
+      toast.warning("Advisor availability not found.");
       return;
     }
 
@@ -90,7 +91,7 @@ function AdvisorsPage() {
       .map((slot) => slot.day.toLowerCase());
 
     if (availableDays.length === 0) {
-      alert("This advisor has no available days.");
+      toast.warning("This advisor has no available days.");
       return;
     }
 
@@ -141,17 +142,17 @@ function AdvisorsPage() {
   // Confirm booking: send advisor_id and preferred_day (YYYY-MM-DD) to backend
   const confirmBooking = async () => {
     if (!selectedDay) {
-      alert("Please select a date first.");
+      toast.warning("Please select a date first.");
       return;
     }
     if (!communicationMethod) {
-      alert("Please select a communication method.");
+      toast.warning("Please select a communication method.");
       return;
     }
 
     const token = localStorage.getItem("access");
     if (!token) {
-      alert("Please login to book an appointment.");
+      toast.warning("Please login to book an appointment.");
       router.push("/authentication");
       return;
     }
@@ -170,17 +171,16 @@ function AdvisorsPage() {
         }
       );
       await new Promise((res) => setTimeout(res, 1000));
-      alert(`Appointment booked successfully for ${selectedDay}`);
+      toast.success(`Appointment booked successfully for ${selectedDay}`);
       setShowDaySelect(false);
       setSelectedDay(null);
       setSelected(null);
     } catch (err) {
-      console.error(err);
       const errMsg =
         err?.response?.data?.error ||
         err?.response?.data ||
         "Failed to book appointment";
-      alert(errMsg);
+      toast.error(errMsg);
     } finally {
       setIsBooking(false);
     }
@@ -290,7 +290,7 @@ function AdvisorsPage() {
                     Consultation Fee
                   </span>
                   <span className="text-sm font-semibold text-gray-800">
-                    ₹200
+                    ₹{advisor.consultation_fee}
                   </span>
                 </div>
               </div>
@@ -317,8 +317,10 @@ function AdvisorsPage() {
                     </p>
                     <div className="flex items-center gap-1 mt-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-700 font-medium">
-                        4.9
+                      <span className="text-sm text-gray-600">4.9</span>
+                      <span className="text-sm text-gray-600">
+                        • {new Date().getFullYear() - selected.dob_year} Years
+                        Old
                       </span>
                     </div>
                   </div>
@@ -338,6 +340,13 @@ function AdvisorsPage() {
                       className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
                     >
                       Not Available
+                    </button>
+                  ) : !selected?.profile_photo ? (
+                    <button
+                      disabled
+                      className="px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-medium cursor-not-allowed"
+                    >
+                      Can't Book
                     </button>
                   ) : bookingStatus === "accepted" ? (
                     <button
@@ -439,7 +448,7 @@ function AdvisorsPage() {
                   <div className="ml-3">
                     <p className="text-gray-400 text-xs">LC Certified</p>
                     <h6 className="capitalize text-gray-800 text-sm">
-                      {selected.educational_certificate ? "Certified" : "Fraud"}
+                      {selected.profile_photo ? "Certified" : "Non Certified"}
                     </h6>
                   </div>
                 </div>
@@ -689,7 +698,7 @@ function AdvisorsPage() {
 
       {/* Select Day Modal */}
       {showDaySelect && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 bg-black/50">
           <div className="bg-gray-100 p-6 rounded-xl shadow-lg w-96">
             <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
               Select Day & Communication Method
@@ -761,9 +770,9 @@ function AdvisorsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[9999]"
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[9999] bg-black/50"
           >
-            <div className="flex flex-col items-center justify-center space-y-4 text-center bg-white h-1/2 p-8 rounded-xl">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center bg-white h-1/2 p-8 rounded-xl w-1/5">
               <PulseLoader color="#06b6d4" margin={4} size={10} />
 
               <h3 className="text-lg font-semibold text-gray-800">
@@ -781,6 +790,7 @@ function AdvisorsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

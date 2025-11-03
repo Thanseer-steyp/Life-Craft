@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from advisor.models import Advisor
 
@@ -109,8 +108,7 @@ class AdvisorRequest(models.Model):
         upload_to="advisor_photos/", null=True, blank=True
     )
     full_name = models.CharField(max_length=255, null=True, blank=True)
-    age = models.PositiveIntegerField(
-        validators=[MinValueValidator(20), MaxValueValidator(65)],
+    dob_year = models.PositiveIntegerField(
         null=True,
         blank=True,
     )
