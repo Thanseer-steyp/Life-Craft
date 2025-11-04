@@ -1,11 +1,12 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from advisor.models import Advisor,AdvisorAvailability
+from advisor.models import Advisor,AdvisorAvailability,AdvisorRating
 from rest_framework import permissions, status
-from .serializers import AdvisorSerializer,AdvisorAvailabilitySerializer
+from .serializers import AdvisorSerializer,AdvisorAvailabilitySerializer,AdvisorRatingSerializer
 from user.models import Appointment
 from chatroom.models import ChatRoom
+from django.db import models
 from api.v1.user.serializers import AppointmentSerializer
 
 
@@ -129,3 +130,52 @@ class AdvisorFeeUpdateView(APIView):
             return Response({"message": "Consultation fee updated successfully", "consultation_fee": advisor.consultation_fee}, status=status.HTTP_200_OK)
         except ValueError:
             return Response({"error": "Invalid fee format"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# advisor/views.py
+
+class AdvisorRatingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, advisor_id):
+        """Add or update a rating for an advisor"""
+        try:
+            advisor = Advisor.objects.get(id=advisor_id)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Advisor not found"}, status=404)
+
+        rating_value = request.data.get("rating")
+        review = request.data.get("review", "")
+
+        if not rating_value:
+            return Response({"error": "Rating is required"}, status=400)
+        if int(rating_value) < 1 or int(rating_value) > 5:
+            return Response({"error": "Rating must be between 1 and 5"}, status=400)
+
+        rating_obj, created = AdvisorRating.objects.update_or_create(
+            advisor=advisor, user=request.user,
+            defaults={"rating": rating_value, "review": review}
+        )
+
+        message = "Rating submitted" if created else "Rating updated"
+        return Response({"message": message, "rating": rating_value}, status=200)
+
+
+class AdvisorRatingsListView(APIView):
+    """List all ratings for a specific advisor"""
+    def get(self, request, advisor_id):
+        try:
+            advisor = Advisor.objects.get(id=advisor_id)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Advisor not found"}, status=404)
+
+        ratings = advisor.ratings.all().order_by("-created_at")
+        
+        serializer = AdvisorRatingSerializer(ratings, many=True)
+
+        avg_rating = advisor.ratings.aggregate(models.Avg('rating'))['rating__avg']
+        return Response({
+            "advisor": advisor.full_name,
+            "average_rating": round(avg_rating or 0, 2),
+            "ratings": serializer.data
+        })

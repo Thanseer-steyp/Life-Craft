@@ -14,6 +14,13 @@ function AdvisorsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState([]);
   const router = useRouter();
+  // --- Review States ---
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [userHasReviewed, setUserHasReviewed] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
 
   // New states for day-selection booking
   const [showDaySelect, setShowDaySelect] = useState(false);
@@ -23,6 +30,75 @@ function AdvisorsPage() {
   const [isBooking, setIsBooking] = useState(false);
 
   // Fetch advisors
+
+  // Fetch reviews for selected advisor
+  useEffect(() => {
+    if (!selected) return;
+    const token = localStorage.getItem("access");
+
+    axios
+      .get(`http://localhost:8000/api/v1/advisor/ratings/${selected.id}/`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      .then((res) => {
+        setReviews(res.data.ratings || []);
+        setAverageRating(res.data.average_rating || 0);
+
+        // ✅ Check if logged user has a review
+        const loggedUserId = res.data.logged_in_user;
+        const userReview = res.data.ratings.find(
+          (r) => r.user_id === loggedUserId // or r.user.id depending on your serializer
+        );
+
+        if (userReview) {
+          setUserHasReviewed(true);
+          setUserRating(userReview.rating);
+          setReviewText(userReview.review);
+        } else {
+          setUserHasReviewed(false);
+          setUserRating(0);
+          setReviewText("");
+        }
+      })
+      .catch(() => {
+        setReviews([]);
+        setAverageRating(0);
+      });
+  }, [selected]);
+
+  // Submit new review
+  const submitReview = async () => {
+    const token = localStorage.getItem("access");
+    if (!token) {
+      toast.warning("Please login to submit a review.");
+      router.push("/authentication");
+      return;
+    }
+
+    if (!userRating) {
+      toast.warning("Please select a star rating.");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `http://localhost:8000/api/v1/advisor/rate/${selected.id}/`,
+        { rating: userRating, review: reviewText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success("Review submitted successfully!");
+      setUserHasReviewed(true); // 🚫 disable further editing
+    } catch (err) {
+      if (err.response?.data?.error?.includes("unique")) {
+        toast.info("You have already submitted a review for this advisor.");
+        setUserHasReviewed(true);
+      } else {
+        toast.error("Failed to submit review");
+      }
+    }
+  };
+
   useEffect(() => {
     axios
       .get("http://localhost:8000/api/v1/advisor/advisors-list/")
@@ -682,6 +758,97 @@ function AdvisorsPage() {
                     );
                   })}
                 </div>
+              </div>
+              {/* ⭐ Advisor Review Section */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Rate & Review
+                </h3>
+
+                {!userHasReviewed ? (
+                  // ✅ User hasn't reviewed yet — show rating form
+                  <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          onClick={() => setUserRating(star)}
+                          className={`w-5 h-5 cursor-pointer ${
+                            star <= (hoverRating || userRating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                        />
+                      ))}
+                    </div>
+
+                    <textarea
+                      placeholder="Write your review..."
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-800"
+                    />
+
+                    <button
+                      onClick={async () => {
+                        await submitReview(); // Call API to submit
+                        setUserHasReviewed(true); // Hide form after submission
+                      }}
+                      className="mt-3 bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+                ) : (
+                  // ✅ Once reviewed — show user's review + all reviews
+                  <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+                    <p className="text-gray-700 text-sm mb-3">
+                      ✅ You’ve rated this advisor. Thanks for your feedback!
+                    </p>
+
+                    {/* Show user's review at top */}
+                    <div className="border-b border-gray-100 pb-2 mb-3">
+                      <p className="font-medium text-gray-800">You</p>
+                      <div className="flex items-center gap-1 text-yellow-400 text-sm">
+                        {"★".repeat(userRating)}
+                      </div>
+                      {reviewText && (
+                        <p className="text-gray-600 text-sm mt-1">
+                          {reviewText}
+                        </p>
+                      )}
+                    </div>
+
+                    
+
+                    {reviews.length > 0 ? (
+                      <div className="space-y-3 max-h-48 overflow-y-auto">
+                        {reviews.map((r) => (
+                          <div
+                            key={r.id}
+                            className="border-b border-gray-100 pb-2"
+                          >
+                            <p className="font-medium text-gray-800">
+                              {r.user}
+                            </p>
+                            <div className="flex items-center gap-1 text-yellow-400 text-sm">
+                              {"★".repeat(r.rating)}
+                            </div>
+                            {r.review && (
+                              <p className="text-gray-600 text-sm mt-1">
+                                {r.review}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No reviews yet.</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

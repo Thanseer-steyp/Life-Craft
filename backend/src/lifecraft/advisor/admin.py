@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Advisor,AdvisorAvailability
+from .models import Advisor,AdvisorAvailability,AdvisorRating
 
 admin.site.register(Advisor)
 admin.site.register(AdvisorAvailability)
+admin.site.register(AdvisorRating)
