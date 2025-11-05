@@ -1,4 +1,5 @@
 from rest_framework import permissions, status
+import threading
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer,UserDashboardSerializer
@@ -105,29 +106,12 @@ class ClientDetailView(RetrieveAPIView):
 class BookAppointmentView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        advisor_id = request.data.get("advisor_id")
-        preferred_day = request.data.get("preferred_day")
-        communication_method = request.data.get("communication_method")  # ✅ get from request
-
-        try:
-            advisor = Advisor.objects.get(id=advisor_id)
-        except Advisor.DoesNotExist:
-            return Response({"error": "Advisor not found"}, status=404)
-
-        # ✅ Create appointment with preferred_day
-        appointment = Appointment.objects.create(
-            user=request.user,
-            advisor=advisor,
-            preferred_day=preferred_day,
-            communication_method=communication_method,  # ✅ save selected date
-        )
-
-        # ✅ Send confirmation email
+    def send_confirmation_email(self, user, advisor, preferred_day, communication_method):
+        """Send email in a background thread."""
         send_mail(
             subject="Appointment Request Confirmation",
             message=f"""
-            Dear {request.user.get_full_name() or request.user.username},
+            Dear {user.get_full_name() or user.username},
 
             Your appointment request with advisor {advisor.user.get_full_name() or advisor.user.username} 
             has been successfully submitted for {preferred_day} via {communication_method}.
@@ -139,9 +123,32 @@ class BookAppointmentView(APIView):
             The Support Team
             """,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[request.user.email],
+            recipient_list=[user.email],
             fail_silently=False,
         )
+
+    def post(self, request):
+        advisor_id = request.data.get("advisor_id")
+        preferred_day = request.data.get("preferred_day")
+        communication_method = request.data.get("communication_method")
+
+        try:
+            advisor = Advisor.objects.get(id=advisor_id)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Advisor not found"}, status=404)
+
+        appointment = Appointment.objects.create(
+            user=request.user,
+            advisor=advisor,
+            preferred_day=preferred_day,
+            communication_method=communication_method,
+        )
+
+        # ✅ Send mail in background
+        threading.Thread(
+            target=self.send_confirmation_email,
+            args=(request.user, advisor, preferred_day, communication_method)
+        ).start()
 
         return Response(AppointmentSerializer(appointment).data, status=201)
 

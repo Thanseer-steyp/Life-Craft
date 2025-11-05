@@ -296,8 +296,8 @@ function Header() {
             ) : (
               <Link
                 href="/authentication"
-                className={`p-2.5 py-3.25 shadow-xl text-sm rounded-md font-bold hover:bg-gray-100 ${
-                  isScrolled ? "bg-black text-white" : "bg-white text-black"
+                className={`p-2.5 py-3.25 shadow-xl text-sm rounded-md font-bold  ${
+                  isScrolled ? "bg-black text-white" : "bg-white text-black hover:bg-gray-100"
                 }`}
               >
                 Get Started

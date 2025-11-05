@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from advisor.models import Advisor,AdvisorAvailability,AdvisorRating
@@ -162,7 +162,7 @@ class AdvisorRatingView(APIView):
 
 
 class AdvisorRatingsListView(APIView):
-    """List all ratings for a specific advisor"""
+
     def get(self, request, advisor_id):
         try:
             advisor = Advisor.objects.get(id=advisor_id)
@@ -170,12 +170,13 @@ class AdvisorRatingsListView(APIView):
             return Response({"error": "Advisor not found"}, status=404)
 
         ratings = advisor.ratings.all().order_by("-created_at")
-        
         serializer = AdvisorRatingSerializer(ratings, many=True)
-
         avg_rating = advisor.ratings.aggregate(models.Avg('rating'))['rating__avg']
+
         return Response({
             "advisor": advisor.full_name,
             "average_rating": round(avg_rating or 0, 2),
-            "ratings": serializer.data
+            "ratings": serializer.data,
+            "logged_in_user": request.user.id if request.user.is_authenticated else None,  # ✅ Add this line
         })
+

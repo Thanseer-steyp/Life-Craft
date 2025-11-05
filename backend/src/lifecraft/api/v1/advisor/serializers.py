@@ -32,7 +32,8 @@ class AdvisorSerializer(serializers.ModelSerializer):
 
 class AdvisorRatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    user_id = serializers.IntegerField(source="user.id", read_only=True)  # ✅ Add this
 
     class Meta:
         model = AdvisorRating
-        fields = ["id", "advisor", "user", "rating", "review", "created_at"]
+        fields = ["id", "advisor", "user", "user_id", "rating", "review", "created_at"]
