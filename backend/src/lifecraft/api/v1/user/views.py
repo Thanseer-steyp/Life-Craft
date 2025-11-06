@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer,UserDashboardSerializer
 from user.models import AdvisorRequest,Appointment,Profile
+from api.v1.advisor.serializers import AppointmentWithRatingSerializer
 from rest_framework.permissions import IsAuthenticated
 from advisor.models import Advisor
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -175,9 +176,15 @@ class UserAppointmentsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        appointments = Appointment.objects.filter(user=request.user).order_by("-created_at")
-        serializer = AppointmentSerializer(appointments, many=True)
+        appointments = (
+            Appointment.objects.filter(user=request.user)
+            .select_related("advisor")
+            .prefetch_related("rating")
+            .order_by("-created_at")
+        )
+        serializer = AppointmentWithRatingSerializer(appointments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     
 class ChatRoomView(APIView):
     permission_classes = [IsAuthenticated]
@@ -242,3 +249,23 @@ class MarkMessagesReadView(APIView):
         ).exclude(sender=request.user).update(is_read=True)
 
         return Response({"detail": "Messages marked as read"}, status=200)
+
+
+class MarkAppointmentAttendedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_id):
+        try:
+            appointment = Appointment.objects.get(id=appointment_id, user=request.user)
+        except Appointment.DoesNotExist:
+            return Response({"error": "Appointment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if appointment.status != "accepted":
+            return Response({"error": "Appointment not accepted yet"}, status=status.HTTP_400_BAD_REQUEST)
+
+        appointment.is_attended = True
+        appointment.save()
+
+        return Response({"message": "Appointment marked as attended", "is_attended": True}, status=status.HTTP_200_OK)
+
+

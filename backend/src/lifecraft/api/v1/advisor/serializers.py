@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from advisor.models import Advisor,AdvisorAvailability,AdvisorRating
+from advisor.models import Advisor,AdvisorAvailability,AdvisorReview
+from user.models import Appointment
 from django.db import models
 
 
@@ -30,10 +31,38 @@ class AdvisorSerializer(serializers.ModelSerializer):
 
 
 
-class AdvisorRatingSerializer(serializers.ModelSerializer):
+class AdvisorReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
-    user_id = serializers.IntegerField(source="user.id", read_only=True)  # ✅ Add this
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
 
     class Meta:
-        model = AdvisorRating
-        fields = ["id", "advisor", "user", "user_id", "rating", "review", "created_at"]
+        model = AdvisorReview
+        fields = ["id", "user", "user_id", "review", "created_at"]
+
+
+class AppointmentWithRatingSerializer(serializers.ModelSerializer):
+    rating_given = serializers.SerializerMethodField()
+    rating_value = serializers.SerializerMethodField()
+    advisor_name = serializers.CharField(source="advisor.full_name", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "advisor_name",
+            "preferred_day",
+            "preferred_time",
+            "communication_method",
+            "status",
+            "is_attended",
+            "rating_given",
+            "rating_value",
+        ]
+
+    def get_rating_given(self, obj):
+        # Return True if rating exists
+        return hasattr(obj, "rating")
+
+    def get_rating_value(self, obj):
+        # Return rating value if exists, else None
+        return getattr(obj.rating, "rating", None) if hasattr(obj, "rating") else None

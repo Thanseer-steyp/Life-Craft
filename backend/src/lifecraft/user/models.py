@@ -176,6 +176,7 @@ class Appointment(models.Model):
         Advisor, on_delete=models.CASCADE, related_name="appointments"
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    is_attended = models.BooleanField(default=False) 
 
     # Filled by advisor after accepting
     preferred_day = models.DateField(null=True, blank=True)
@@ -190,3 +191,5 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"Appointment: {self.user.username} with {self.advisor.user.username} ({self.status})"
+
+

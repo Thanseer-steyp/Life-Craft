@@ -5,17 +5,17 @@ import PulseLoader from "react-spinners/PulseLoader";
 import { toast, ToastContainer } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { Star } from "lucide-react";
 
 function AdvisorsPage() {
+  const router = useRouter();
+
   const [advisors, setAdvisors] = useState([]);
   const [selected, setSelected] = useState(null);
   const [bookingStatus, setBookingStatus] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState([]);
   const [refreshReviews, setRefreshReviews] = useState(false); // ✅ add this at top
-  const router = useRouter();
   const [loggedUserId, setLoggedUserId] = useState(null);
 
   // --- Review States ---
@@ -95,6 +95,12 @@ function AdvisorsPage() {
       });
 
       toast.success("Review submitted successfully!");
+      setAdvisors(advisors.map(adv => 
+        adv.id === selected.id 
+          ? { ...adv, average_rating: userRating } 
+          : adv
+      ));
+      setSelected({ ...selected, average_rating: userRating });
       setRefreshReviews((prev) => !prev);
       setUserHasReviewed(true); // 🚫 disable further editing
     } catch (err) {
@@ -334,10 +340,16 @@ function AdvisorsPage() {
                         {advisor.experience_years} years experience
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs text-gray-600">{advisor.average_rating || "Fresh"}</span>
-                    </div>
+                    {advisor.average_rating > 0 ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs text-gray-600">
+                          {advisor.average_rating}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-500 mt-1">Fresh</span>
+                    )}
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
@@ -397,7 +409,7 @@ function AdvisorsPage() {
                         {selected.experience_years} years experience
                       </p>
                       <div className="flex items-center gap-1 mt-1">
-                        {selected.average_rating && (
+                        {selected.average_rating > 0 && (
                           <>
                             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm text-gray-600">

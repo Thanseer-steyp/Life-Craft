@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function BecomeAdvisorForm() {
   const router = useRouter();
@@ -49,10 +50,8 @@ function BecomeAdvisorForm() {
     setToken(accessToken);
 
     if (accessToken) {
-      axios
-        .get("http://localhost:8000/api/v1/user/user-dashboard/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+      axiosInstance
+        .get("api/v1/user/user-dashboard/")
         .then((res) => {
           setFormData((prev) => ({
             ...prev,

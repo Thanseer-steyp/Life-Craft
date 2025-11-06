@@ -356,10 +356,10 @@ function Header() {
 
           {/* Appointments */}
           <Link
-            href="/user-inbox"
+            href="/appointments"
             onClick={() => setShowMenu(false)}
             className={`flex gap-2 items-center py-2 px-4 text-sm rounded-md transition ${
-              pathname === "/user-inbox"
+              pathname === "/appointments"
                 ? "text-green-600 font-medium border-l-4 border-green-500 bg-green-50"
                 : "text-black hover:shadow-lg border-transparent hover:-translate-x-0.5"
             }`}
@@ -370,7 +370,7 @@ function Header() {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={pathname === "/user-inbox" ? "#16a34a" : "#000"}
+              stroke={pathname === "/appointments" ? "#16a34a" : "#000"}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"

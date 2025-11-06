@@ -64,15 +64,25 @@ class AdvisorAvailability(models.Model):
 
 
 
-class AdvisorRating(models.Model):
-    advisor = models.ForeignKey('Advisor', on_delete=models.CASCADE, related_name='ratings')
+class AdvisorReview(models.Model):
+    advisor = models.ForeignKey('Advisor', on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    rating = models.PositiveSmallIntegerField()  # e.g., 1 to 5 stars
-    review = models.TextField(null=True, blank=True)
+    review = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('advisor', 'user')  # one rating per user per advisor
+        unique_together = ('advisor', 'user')  # one review per user
+
+    def __str__(self):
+        return f"{self.user.username} reviewed {self.advisor.full_name}"
+    
+
+class AdvisorRating(models.Model):
+    advisor = models.ForeignKey('Advisor', on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    appointment = models.OneToOneField('user.Appointment', on_delete=models.CASCADE, related_name='rating', null=True)  # ✅ Link to appointment
+    rating = models.PositiveSmallIntegerField()  # 1 to 5 stars
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username} rated {self.advisor.full_name} - {self.rating}⭐"

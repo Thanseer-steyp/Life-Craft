@@ -366,7 +366,7 @@ function AdvisorDashboard() {
                                 onClick={() => submitAccept(appt.id)}
                                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
                               >
-                                Submit Accept
+                                Accept
                               </button>
                               <button
                                 onClick={() => setAcceptingId(null)}
@@ -396,7 +396,7 @@ function AdvisorDashboard() {
                                 onClick={() => submitDecline(appt.id)}
                                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
                               >
-                                Submit Decline
+                                Submit
                               </button>
                               <button
                                 onClick={() => setDecliningId(null)}
@@ -414,7 +414,7 @@ function AdvisorDashboard() {
                               onClick={() => setAcceptingId(appt.id)}
                               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
                             >
-                              Accept
+                              Schedule
                             </button>
                             <button
                               onClick={() => setDecliningId(appt.id)}
