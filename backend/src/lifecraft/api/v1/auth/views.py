@@ -99,7 +99,7 @@ class SignupOTPResendView(APIView):
 
         # Optional: enforce cooldown
         if otp_obj.last_sent and timezone.now() - otp_obj.last_sent < timedelta(seconds=30):
-            remaining = 30 - (timezone.now() - otp_obj.last_sent).seconds
+            remaining = 30 - (timezone.now() - otp_obj.last_sent).secondsLoginView
             return Response({"error": f"Please wait {remaining}s before resending OTP"}, status=400)
 
         otp = otp_obj.generate_otp()

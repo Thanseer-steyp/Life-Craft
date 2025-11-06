@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (ProfileSetupView,UserDashboardView,AdvisorRequestView,ClientsListView, ClientDetailView,
-BookAppointmentView,UserAppointmentsView,ChatRoomView,MarkMessagesReadView,CheckAppointmentStatusView)
+BookAppointmentView,UserAppointmentsView,ChatRoomView,MarkMessagesReadView,CheckAppointmentStatusView,BugReportListCreateView)
 
 urlpatterns = [
     path("profile-setup/", ProfileSetupView.as_view(), name="profile-setup"),
@@ -13,6 +13,7 @@ urlpatterns = [
     path("check-appointment/<int:advisor_id>/", CheckAppointmentStatusView.as_view(), name="check-appointment"),
     path("chat/<int:appointment_id>/", ChatRoomView.as_view(), name="chat-room"),
     path("chat/<int:appointment_id>/read/", MarkMessagesReadView.as_view(), name="chat-mark-read"),
+    path('bugs/', BugReportListCreateView.as_view(), name='bug-list-create'),
 ]
 
 

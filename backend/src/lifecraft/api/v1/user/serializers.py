@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from user.models import Profile,AdvisorRequest,Appointment
+from user.models import Profile,AdvisorRequest,Appointment,BugReport
 from chatroom.models import ChatRoom, Message
 
 
@@ -199,3 +199,10 @@ class ChatRoomSerializer(serializers.ModelSerializer):
             "user_name", "advisor_name",
             "messages", "created_at"
         ]
+
+class BugReportSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = BugReport
+        fields = '__all__'

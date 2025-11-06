@@ -190,3 +190,21 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"Appointment: {self.user.username} with {self.advisor.user.username} ({self.status})"
+
+
+class BugReport(models.Model):
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bug_reports')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    screenshot = models.ImageField(upload_to='screenshots/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} (by {self.user.username})"

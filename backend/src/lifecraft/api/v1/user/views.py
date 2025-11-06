@@ -1,8 +1,8 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer,UserDashboardSerializer
-from user.models import AdvisorRequest,Appointment,Profile
+from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer,UserDashboardSerializer,BugReportSerializer
+from user.models import AdvisorRequest,Appointment,Profile,BugReport
 from rest_framework.permissions import IsAuthenticated
 from advisor.models import Advisor
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -235,3 +235,20 @@ class MarkMessagesReadView(APIView):
         ).exclude(sender=request.user).update(is_read=True)
 
         return Response({"detail": "Messages marked as read"}, status=200)
+
+class BugReportListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # GET → list all bug reports
+    def get(self, request):
+        bugs = BugReport.objects.all().order_by('-created_at')
+        serializer = BugReportSerializer(bugs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # POST → create new bug report
+    def post(self, request):
+        serializer = BugReportSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
