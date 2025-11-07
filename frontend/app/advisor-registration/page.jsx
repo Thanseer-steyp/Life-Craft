@@ -46,21 +46,32 @@ function BecomeAdvisorForm() {
   };
 
   useEffect(() => {
-    const accessToken = localStorage.getItem("access");
-    setToken(accessToken);
+    const fetchUserInfo = async () => {
+      const accessToken = localStorage.getItem("access");
+      setToken(accessToken);
 
-    if (accessToken) {
-      axiosInstance
-        .get("api/v1/user/user-dashboard/")
-        .then((res) => {
-          setFormData((prev) => ({
-            ...prev,
-            full_name: res.data.name,
-            email: res.data.email,
-          }));
-        })
-        .catch(() => setMessage("Failed to load user info."));
-    }
+      if (!accessToken) {
+        setMessage("No access token found.");
+        return;
+      }
+
+      try {
+        const res = await axiosInstance.get(
+          "api/v1/user/user-dashboard/"
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          full_name: res.data.name,
+          email: res.data.email,
+        }));
+      } catch (error) {
+        console.error("Failed to load user info:", error);
+        setMessage("Failed to load user info.");
+      }
+    };
+
+    fetchUserInfo();
   }, []);
 
   const handleChange = (e) => {
@@ -424,6 +435,7 @@ function BecomeAdvisorForm() {
         confirmButtonColor: "#16a34a", // nice green color
       }).then((result) => {
         if (result.isConfirmed) {
+          window.dispatchEvent(new Event("advisor-request-updated"));
           router.push("/"); // redirect after clicking OK
         }
       });
@@ -676,7 +688,7 @@ function BecomeAdvisorForm() {
               <p className="text-sm text-gray-500 mt-8">
                 In order to process your registration, we ask you to provide the
                 following information. Please note that all fields marked with
-                an asterisk (*) are required.
+                an asterisk (<span className="text-red-500">*</span>) are required.
               </p>
 
               <div className="flex justify-between mt-8">
@@ -866,7 +878,7 @@ function BecomeAdvisorForm() {
               <p className="text-sm text-gray-500 mt-8">
                 In order to process your registration, we ask you to provide the
                 following information. Please note that all fields marked with
-                an asterisk (*) are required.
+                an asterisk (<span className="text-red-500">*</span>) are required.
               </p>
 
               <div className="flex justify-between mt-8">
@@ -996,7 +1008,7 @@ function BecomeAdvisorForm() {
               <p className="text-sm text-gray-500 mt-8">
                 In order to process your registration, we ask you to provide the
                 following information. Please note that all fields marked with
-                an asterisk (*) are required.
+                an asterisk (<span className="text-red-500">*</span>) are required.
               </p>
 
               <div className="flex justify-between mt-8">

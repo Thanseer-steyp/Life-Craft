@@ -35,33 +35,58 @@ function Header() {
     };
   }, [showMenu]);
 
-  useEffect(() => {
-    const accessToken = localStorage.getItem("access");
-    setToken(accessToken);
 
-    if (accessToken) {
-      // ✅ Check profile completion
-      axios
-        .get("http://localhost:8000/api/v1/user/profile-setup/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        .then((res) => {
-          if (res.status === 200) setHasProfile(true);
-        })
-        .catch(() => setHasProfile(false));
+useEffect(() => {
+  const accessToken = localStorage.getItem("access");
+  if (!accessToken) return;
 
-      // ✅ Check if advisor request was submitted
-      axios
-        .get("http://localhost:8000/api/v1/user/become-advisor/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        .then((res) => {
-          // expect backend returns { requested: true/false }
-          setAdvisorRequested(res.data.requested);
-        })
-        .catch(() => setAdvisorRequested(false));
+  const fetchProfileStatus = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:8000/api/v1/user/profile-setup/",
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      setHasProfile(!!res.data.profile_exists);
+    } catch {
+      setHasProfile(false);
     }
-  }, []);
+  };
+
+  fetchProfileStatus();
+
+  // 🔹 Re-fetch when profile changes (e.g. after profile setup)
+  const handleProfileUpdate = () => fetchProfileStatus();
+  window.addEventListener("profile-updated", handleProfileUpdate);
+
+  return () => window.removeEventListener("profile-updated", handleProfileUpdate);
+}, []);
+
+// ✅ 2️⃣ Check Advisor Request
+useEffect(() => {
+  const accessToken = localStorage.getItem("access");
+  if (!accessToken) return;
+
+  const fetchAdvisorStatus = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:8000/api/v1/user/become-advisor/",
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      setAdvisorRequested(!!res.data.requested);
+    } catch {
+      setAdvisorRequested(false);
+    }
+  };
+
+  fetchAdvisorStatus();
+
+  // 🔹 Re-fetch when advisor request changes
+  const handleAdvisorUpdate = () => fetchAdvisorStatus();
+  window.addEventListener("advisor-request-updated", handleAdvisorUpdate);
+
+  return () => window.removeEventListener("advisor-request-updated", handleAdvisorUpdate);
+}, []);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -271,7 +296,7 @@ function Header() {
                   href={hasProfile ? "/user-dashboard" : "/profile-setup"}
                   className="px-2 py-1 bg-white shadow-xl rounded-lg flex hover:bg-gray-50"
                 >
-                  <div className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-100 bg-white font-bold text-xl select-none z-50 text-black">
+                  <div className="w-9 h-9 flex items-center justify-center rounded-lg border overflow-hidden border-gray-100 bg-white font-bold text-xl select-none z-50 text-black">
                     {user.profile?.profile_picture ? (
                       <img
                         src={`http://localhost:8000${user.profile.profile_picture}`}
@@ -297,7 +322,9 @@ function Header() {
               <Link
                 href="/authentication"
                 className={`p-2.5 py-3.25 shadow-xl text-sm rounded-md font-bold  ${
-                  isScrolled ? "bg-black text-white" : "bg-white text-black hover:bg-gray-100"
+                  isScrolled
+                    ? "bg-black text-white"
+                    : "bg-white text-black hover:bg-gray-100"
                 }`}
               >
                 Get Started

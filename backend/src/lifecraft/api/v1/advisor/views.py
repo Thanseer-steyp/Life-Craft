@@ -196,23 +196,40 @@ class AdvisorReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, advisor_id):
-        """Submit a text review (one time only, no appointment needed)"""
+        """Allow review only if user has attended or accepted an appointment with this advisor"""
         try:
             advisor = Advisor.objects.get(id=advisor_id)
         except Advisor.DoesNotExist:
             return Response({"error": "Advisor not found"}, status=404)
 
+        # ✅ Check if user had any accepted/attended appointment
+        has_valid_appointment = Appointment.objects.filter(
+            user=request.user,
+            advisor=advisor,
+            is_attended=True,  # You can also include is_attended=True if you want stricter
+        ).exists()
+
+        if not has_valid_appointment:
+            return Response(
+                {"error": "You can only review this advisor after attending an appointment with them."},
+                status=403,
+            )
+
+        # ✅ Get and validate review text
         review_text = request.data.get("review", "").strip()
         if not review_text:
-            return Response({"error": "Review text is required"}, status=400)
+            return Response({"error": "Review text is required."}, status=400)
 
+        # ✅ Create or update the review
         review_obj, created = AdvisorReview.objects.update_or_create(
-            advisor=advisor, user=request.user,
-            defaults={"review": review_text}
+            advisor=advisor,
+            user=request.user,
+            defaults={"review": review_text},
         )
 
-        message = "Review submitted" if created else "Review updated"
+        message = "Review submitted successfully" if created else "Review updated successfully"
         return Response({"message": message}, status=200)
+
 
 
 class AdvisorRatingsAndReviewsView(APIView):
@@ -251,7 +268,7 @@ class AdvisorRatingsAndReviewsView(APIView):
 
         return Response({
             "advisor": advisor.full_name,
-            "average_rating": round(avg_rating or 0, 2),
+            "average_rating": round(avg_rating or 0, 1),
             "total_ratings": advisor.ratings.count(),
             "reviews": review_serializer.data,
             "user_review": AdvisorReviewSerializer(user_review).data if user_review else None,

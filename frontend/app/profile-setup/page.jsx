@@ -103,7 +103,8 @@ export default function ProfileSetupPage() {
       );
 
       setMessage("Profile created successfully!");
-      setTimeout(() => router.push("/user-dashboard"), 1500);
+      window.dispatchEvent(new Event("profile-updated"));
+      router.push("/user-dashboard");
     } catch (err) {
       console.error(err);
       setMessage("Failed to save profile. Please try again.");

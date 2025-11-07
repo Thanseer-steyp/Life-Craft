@@ -23,7 +23,7 @@ class AdvisorSerializer(serializers.ModelSerializer):
 
     def get_average_rating(self, obj):
         avg = obj.ratings.aggregate(models.Avg('rating'))['rating__avg']
-        return round(avg or 0, 2)
+        return round(avg or 0, 1)
 
 
 

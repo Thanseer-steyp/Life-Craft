@@ -37,44 +37,40 @@ function AdvisorsPage() {
     if (!selected) return;
 
     axiosInstance
-      .get(`/api/v1/advisor/ratings/${selected.id}/`)
+      .get(`/api/v1/advisor/ratings-reviews/${selected.id}/`)
       .then((res) => {
-        const allReviews = res.data.ratings || []; // ✅ added (1)
-        const loggedId = res.data.logged_in_user || null; // ✅ added (2)
+        const allReviews = res.data.reviews || [];
+        const loggedId = res.data.logged_in_user;
+        const userReview = res.data.user_review;
 
-        // ✅ Move logged user's review to the top
-        const userReview = allReviews.find((r) => r.user_id === loggedId); // ✅ added (3)
-        const sortedReviews = userReview
-          ? [userReview, ...allReviews.filter((r) => r.user_id !== loggedId)]
-          : allReviews; // ✅ added (4)
-
-        setReviews(sortedReviews);
-        setAverageRating(res.data.average_rating || 0);
         setLoggedUserId(loggedId);
 
-        // ✅ Maintain your existing logic below
+        // ✅ Move logged-in user's review to top
+        const sortedReviews = userReview
+          ? [userReview, ...allReviews.filter((r) => r.user_id !== loggedId)]
+          : allReviews;
+
+        setReviews(sortedReviews);
+
         if (userReview) {
           setUserHasReviewed(true);
-          setUserRating(userReview.rating);
           setReviewText(userReview.review);
         } else {
           setUserHasReviewed(false);
-          setUserRating(0);
           setReviewText("");
         }
       })
       .catch((err) => {
         console.error("❌ Failed to fetch advisor reviews:", err);
         setReviews([]);
-        setAverageRating(0);
       });
 
     return () => {
-      console.log("🔴 Cleaning up reviews for advisor:", selected.id);
+      console.log("🧹 Cleaning up reviews for advisor:", selected.id);
     };
   }, [selected, refreshReviews]);
 
-  // Submit new review
+  // ✅ Submit a new review (text-only)
   const submitReview = async () => {
     const token = localStorage.getItem("access");
     if (!token) {
@@ -83,30 +79,24 @@ function AdvisorsPage() {
       return;
     }
 
-    if (!userRating) {
-      toast.warning("Please select a star rating.");
+    if (!reviewText.trim()) {
+      toast.warning("Please write something before submitting.");
       return;
     }
 
     try {
-      await axiosInstance.post(`api/v1/advisor/rate/${selected.id}/`, {
-        rating: userRating,
+      await axiosInstance.post(`/api/v1/advisor/review/${selected.id}/`, {
         review: reviewText,
       });
 
       toast.success("Review submitted successfully!");
-      setAdvisors(advisors.map(adv => 
-        adv.id === selected.id 
-          ? { ...adv, average_rating: userRating } 
-          : adv
-      ));
-      setSelected({ ...selected, average_rating: userRating });
       setRefreshReviews((prev) => !prev);
-      setUserHasReviewed(true); // 🚫 disable further editing
+      setUserHasReviewed(true);
     } catch (err) {
-      if (err.response?.data?.error?.includes("unique")) {
-        toast.info("You have already submitted a review for this advisor.");
-        setUserHasReviewed(true);
+      if (err.response?.status === 403) {
+        toast.info(
+          err.response?.data?.error
+        );
       } else {
         toast.error("Failed to submit review");
       }
@@ -790,28 +780,12 @@ function AdvisorsPage() {
                 {/* ⭐ Advisor Review Section */}
                 <div className="mt-8">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Rate & Review
+                    Reviews
                   </h3>
 
-                  {/* If user hasn’t reviewed yet AND is logged in → show form */}
+                  {/* ✅ Review form: only if user hasn't reviewed */}
                   {!userHasReviewed && (
                     <div className="bg-gray-50 p-4 rounded-xl shadow-sm mb-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            onClick={() => setUserRating(star)}
-                            className={`w-5 h-5 cursor-pointer ${
-                              star <= (hoverRating || userRating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                            }`}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                          />
-                        ))}
-                      </div>
-
                       <textarea
                         placeholder="Write your review..."
                         value={reviewText}
@@ -828,7 +802,7 @@ function AdvisorsPage() {
                     </div>
                   )}
 
-                  {/* ✅ Always show reviews, even if user hasn’t reviewed */}
+                  {/* ✅ Display reviews (user review always on top) */}
                   <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
                     {reviews.length > 0 ? (
                       <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -836,7 +810,9 @@ function AdvisorsPage() {
                           <div
                             key={r.id}
                             className={`border-b border-gray-100 pb-2 ${
-                              r.user_id === loggedUserId ? "" : ""
+                              r.user_id === loggedUserId
+                                ? "bg-yellow-50 rounded-lg p-2"
+                                : ""
                             }`}
                           >
                             <p className="font-medium text-gray-800 text-sm">
@@ -844,14 +820,9 @@ function AdvisorsPage() {
                                 ? `You (${r.user})`
                                 : r.user}
                             </p>
-                            <div className="flex items-center gap-1 text-yellow-400 text-sm">
-                              {"★".repeat(r.rating)}
-                            </div>
-                            {r.review && (
-                              <p className="text-gray-600 text-sm mt-1">
-                                {r.review}
-                              </p>
-                            )}
+                            <p className="text-gray-600 text-sm mt-1">
+                              {r.review}
+                            </p>
                           </div>
                         ))}
                       </div>

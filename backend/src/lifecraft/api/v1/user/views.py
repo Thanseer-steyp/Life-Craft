@@ -23,12 +23,20 @@ class ProfileSetupView(APIView):
         try:
             profile = request.user.profile
             serializer = ProfileSerializer(profile, context={"user": request.user})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({
+                "profile_exists": True,
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+
         except Profile.DoesNotExist:
             # Return empty/default structure instead of creating a profile
             return Response(
-                {"message": "Profile not set up yet."}, status=status.HTTP_404_NOT_FOUND
-            )
+        {
+            "profile_exists": False,
+            "data": "Profile not set up yet.",
+        },
+        status=status.HTTP_200_OK,
+    )
 
     def post(self, request):
         try:
@@ -59,8 +67,24 @@ class AdvisorRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        exists = AdvisorRequest.objects.filter(user=request.user).exists()
-        return Response({"requested": exists}, status=200)
+        advisor_request = AdvisorRequest.objects.filter(user=request.user).first()
+        if advisor_request:
+            return Response(
+                {
+                    "requested": True,
+                    "status": advisor_request.status,  # 👈 Show current status
+                    "submitted_at": advisor_request.submitted_at,
+                },
+                status=200,
+            )
+        return Response(
+        {
+            "requested": False,
+            "status": None,
+            "message": "No advisor request found.",
+        },
+        status=200,
+    )
 
     def post(self, request):
         data = request.data.copy()
