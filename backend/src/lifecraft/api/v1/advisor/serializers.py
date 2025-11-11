@@ -15,15 +15,25 @@ class AdvisorSerializer(serializers.ModelSerializer):
         many=True, read_only=True, source="availabilities"
     )
     average_rating = serializers.SerializerMethodField()
+    total_appointments = serializers.SerializerMethodField()
+    completed_appointments = serializers.SerializerMethodField()
     
     class Meta:
         model = Advisor
         fields = "__all__" 
-        extra_fields = ["average_rating"]
+        extra_fields = ["average_rating", "total_appointments", "completed_appointments"]
 
     def get_average_rating(self, obj):
         avg = obj.ratings.aggregate(models.Avg('rating'))['rating__avg']
         return round(avg or 0, 1)
+    
+    def get_total_appointments(self, obj):
+        # Count all appointments linked to this advisor
+        return Appointment.objects.filter(advisor=obj).count()
+
+    def get_completed_appointments(self, obj):
+        # Count only attended appointments
+        return Appointment.objects.filter(advisor=obj, is_attended=True).count()
 
 
 

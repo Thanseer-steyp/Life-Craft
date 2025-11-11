@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/components/config/axiosInstance";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -44,10 +44,8 @@ export default function ProfileSetupPage() {
     setToken(access);
 
     if (access) {
-      axios
-        .get("http://localhost:8000/api/v1/user/user-dashboard/", {
-          headers: { Authorization: `Bearer ${access}` },
-        })
+      axiosInstance
+        .get("api/v1/user/user-dashboard/")
         .then((res) => {
           setUserFullName(res.data.name || "");
           setUserEmail(res.data.email || "");
@@ -91,16 +89,12 @@ export default function ProfileSetupPage() {
         else data.append(key, value);
       });
 
-      await axios.post(
-        "http://localhost:8000/api/v1/user/profile-setup/",
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      await axiosInstance.post("api/v1/user/profile-setup/", data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       setMessage("Profile created successfully!");
       window.dispatchEvent(new Event("profile-updated"));

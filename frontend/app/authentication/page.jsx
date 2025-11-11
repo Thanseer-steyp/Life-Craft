@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import axios from "axios";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function AuthPage() {
   const router = useRouter();
@@ -28,8 +28,6 @@ function AuthPage() {
     newPassword: "",
   });
 
-  
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -48,22 +46,19 @@ function AuthPage() {
       // ---------------- Signup Flow ----------------
       if (!isLogin) {
         if (!otpSent) {
-          await axios.post(
-            "http://localhost:8000/api/v1/auth/signup-request/",
-            {
-              username: formData.username,
-              first_name: formData.name,
-              email: formData.email,
-              password: formData.password,
-            }
-          );
+          await axiosInstance.post("api/v1/auth/signup-request/", {
+            username: formData.username,
+            first_name: formData.name,
+            email: formData.email,
+            password: formData.password,
+          });
           setMessage("OTP sent to your email. Enter OTP to verify signup.");
           setOtpSent(true);
         } else {
-          await axios.post(
-            "http://localhost:8000/api/v1/auth/signup-otp-verification/",
-            { email: formData.email, otp: formData.otp }
-          );
+          await axiosInstance.post("api/v1/auth/signup-otp-verification/", {
+            email: formData.email,
+            otp: formData.otp,
+          });
           setMessage("Signup successful! Please login.");
           setOtpSent(false);
           setIsLogin(true);
@@ -73,21 +68,17 @@ function AuthPage() {
       // ---------------- Reset Password Flow ----------------
       else if (resetPassword) {
         if (!otpSent) {
-          await axios.post(
-            "http://localhost:8000/api/v1/auth/password-reset-otp/",
-            { email: formData.email }
-          );
+          await axiosInstance.post("api/v1/auth/password-reset-otp/", {
+            email: formData.email,
+          });
           setMessage("OTP sent to your email");
           setOtpSent(true);
         } else {
-          await axios.post(
-            "http://localhost:8000/api/v1/auth/password-reset-confirm/",
-            {
-              email: formData.email,
-              otp: formData.otp,
-              new_password: formData.newPassword,
-            }
-          );
+          await axiosInstance.post("api/v1/auth/password-reset-confirm/", {
+            email: formData.email,
+            otp: formData.otp,
+            new_password: formData.newPassword,
+          });
           setMessage("Password reset successful! Please login.");
           setResetPassword(false);
           setOtpSent(false);
@@ -97,13 +88,10 @@ function AuthPage() {
 
       // ---------------- Login with Password ----------------
       else if (isLogin && !useOTP) {
-        const res = await axios.post(
-          "http://localhost:8000/api/v1/auth/login/",
-          {
-            email: formData.email,
-            password: formData.password,
-          }
-        );
+        const res = await axiosInstance.post("api/v1/auth/login/", {
+          email: formData.email,
+          password: formData.password,
+        });
 
         const accessToken = res.data.data.access;
         const refreshToken = res.data.data.refresh;
@@ -124,8 +112,8 @@ function AuthPage() {
           router.push("/admin-dashboard");
         } else {
           // 🔹 Advisor check
-          const advisorRes = await axios.get(
-            "http://localhost:8000/api/v1/advisor/advisors-list/",
+          const advisorRes = await axiosInstance.get(
+            "api/v1/advisor/advisors-list/",
             {
               headers: { Authorization: `Bearer ${accessToken}` },
             }
@@ -148,17 +136,14 @@ function AuthPage() {
       // ---------------- Login with OTP ----------------
       else if (isLogin && useOTP) {
         if (!otpSent) {
-          await axios.post(
-            "http://localhost:8000/api/v1/auth/login-otp-request/",
-            {
-              email: formData.email,
-            }
-          );
+          await axiosInstance.post("api/v1/auth/login-otp-request/", {
+            email: formData.email,
+          });
           setMessage("OTP sent to your email");
           setOtpSent(true);
         } else {
-          const res = await axios.post(
-            "http://localhost:8000/api/v1/auth/login-otp-verification/",
+          const res = await axiosInstance.post(
+            "api/v1/auth/login-otp-verification/",
             { email: formData.email, otp: formData.otp }
           );
 
@@ -180,12 +165,7 @@ function AuthPage() {
             router.push("/admin-dashboard");
           } else {
             // 🔹 Advisor check
-            const advisorRes = await axios.get(
-              "http://localhost:8000/api/v1/advisor/advisors-list/",
-              {
-                headers: { Authorization: `Bearer ${accessToken}` },
-              }
-            );
+            const advisorRes = await axiosInstance.get("api/v1/advisor/advisors-list/");
 
             const isAdvisor = advisorRes.data.some(
               (adv) => adv.email === formData.email
@@ -213,13 +193,13 @@ function AuthPage() {
     try {
       let url = "";
       if (!isLogin)
-        url = "http://localhost:8000/api/v1/auth/signup-otp-resend/";
+        url = "api/v1/auth/signup-otp-resend/";
       else if (useOTP || resetPassword)
         url = useOTP
-          ? "http://localhost:8000/api/v1/auth/login-otp-request/"
-          : "http://localhost:8000/api/v1/auth/password-reset-otp/";
+          ? "api/v1/auth/login-otp-request/"
+          : "api/v1/auth/password-reset-otp/";
 
-      await axios.post(url, { email: formData.email });
+      await axiosInstance.post(url, { email: formData.email });
       setMessage("OTP resent successfully");
       setFormData({ ...formData, otp: "" });
       setCooldown(30);

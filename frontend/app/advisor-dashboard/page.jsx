@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function AdvisorDashboard() {
   const [activeTab, setActiveTab] = useState("appointments"); // ✅ Tabs
@@ -42,10 +42,8 @@ function AdvisorDashboard() {
 
   const fetchAvailability = () => {
     setAvailabilityLoading(true);
-    axios
-      .get("http://localhost:8000/api/v1/advisor/availability/", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
-      })
+    axiosInstance
+      .get("api/v1/advisor/availability/")
       .then((res) => {
         const merged = defaultWeek.map((day) => {
           const serverDay = res.data.find(
@@ -79,10 +77,8 @@ function AdvisorDashboard() {
   };
   const fetchConsultationFee = () => {
     setFeeLoading(true);
-    axios
-      .get("http://localhost:8000/api/v1/advisor/fee/", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
-      })
+    axiosInstance
+      .get("api/v1/advisor/update-fee/")
       .then((res) => setConsultationFee(res.data.consultation_fee || ""))
       .catch(() => console.error("Failed to fetch fee"))
       .finally(() => setFeeLoading(false));
@@ -95,16 +91,8 @@ function AdvisorDashboard() {
       return;
     }
 
-    axios
-      .put(
-        "http://localhost:8000/api/v1/advisor/update-fee/",
-        { consultation_fee: consultationFee },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access")}`,
-          },
-        }
-      )
+    axiosInstance
+      .put("api/v1/advisor/update-fee/", { consultation_fee: consultationFee })
       .then(() => alert("Consultation fee updated successfully"))
       .catch(() => alert("Failed to update consultation fee"));
   };
@@ -118,10 +106,8 @@ function AdvisorDashboard() {
       }
     }
 
-    axios
-      .put("http://localhost:8000/api/v1/advisor/availability/", dayData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
-      })
+    axiosInstance
+      .put("api/v1/advisor/availability/", dayData)
       .then(() => {
         alert(`${dayData.day} availability updated successfully`);
         fetchAvailability();
@@ -130,10 +116,8 @@ function AdvisorDashboard() {
   };
 
   const fetchAppointments = () => {
-    axios
-      .get("http://localhost:8000/api/v1/advisor/inbox/", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
-      })
+    axiosInstance
+      .get("api/v1/advisor/inbox/")
       .then((res) => {
         setAppointments(res.data);
         setLoading(false);
@@ -169,18 +153,10 @@ function AdvisorDashboard() {
     }
 
     try {
-      await axios.post(
-        `http://localhost:8000/api/v1/advisor/manage-appointment/${id}/`,
-        {
-          action: "accept",
-          preferred_time: preferredTime,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access")}`,
-          },
-        }
-      );
+      await axiosInstance.post(`api/v1/advisor/manage-appointment/${id}/`, {
+        action: "accept",
+        preferred_time: preferredTime,
+      });
       setAcceptingId(null);
       fetchAppointments();
     } catch {
@@ -190,18 +166,10 @@ function AdvisorDashboard() {
 
   const submitDecline = async (id) => {
     try {
-      await axios.post(
-        `http://localhost:8000/api/v1/advisor/manage-appointment/${id}/`,
-        {
-          action: "decline",
-          decline_message: formData[id]?.decline_message,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access")}`,
-          },
-        }
-      );
+      await axiosInstance.post(`api/v1/advisor/manage-appointment/${id}/`, {
+        action: "decline",
+        decline_message: formData[id]?.decline_message,
+      });
       setDecliningId(null);
       fetchAppointments();
     } catch {

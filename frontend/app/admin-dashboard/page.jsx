@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import {
   Users,
   User,
@@ -13,6 +12,7 @@ import {
   GraduationCap,
   ScanSearch,
 } from "lucide-react";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function AdminDashboard() {
   const router = useRouter();
@@ -33,12 +33,8 @@ function AdminDashboard() {
     const token = localStorage.getItem("access");
     if (!token) return;
 
-    axios
-      .get("http://localhost:8000/api/v1/admin/advisor-requests/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    axiosInstance
+      .get("api/v1/admin/advisor-requests/")
       .then((res) => {
         setRequests(res.data);
       })
@@ -48,8 +44,8 @@ function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8000/api/v1/user/clients-list/")
+    axiosInstance
+      .get("api/v1/user/clients-list/")
       .then((res) => {
         setUsers(res.data);
       })
@@ -59,8 +55,8 @@ function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8000/api/v1/advisor/advisors-list/")
+    axiosInstance
+      .get("api/v1/advisor/advisors-list/")
       .then((res) => {
         setAdvisors(res.data);
       })
@@ -74,16 +70,10 @@ function AdminDashboard() {
     setLoading(true);
 
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/admin/advisor-requests/",
-        { id, action },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await axiosInstance.post("api/v1/admin/advisor-requests/", {
+        id,
+        action,
+      });
 
       // Update local state after successful action
       const updatedRequests = requests.filter((r) => r.id !== id);
@@ -116,9 +106,14 @@ function AdminDashboard() {
               </h1>
               <p className="text-gray-600">Manage your platform with ease</p>
             </div>
-            <div className="flex items-center space-x-2 bg-red-100 px-4 py-2 rounded-full border border-red-200" onClick={handleLogout}>
+            <div
+              className="flex items-center space-x-2 bg-red-100 px-4 py-2 rounded-full border border-red-200"
+              onClick={handleLogout}
+            >
               <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
-              <span className="text-red-600 font-semibold text-sm select-none">Logout</span>
+              <span className="text-red-600 font-semibold text-sm select-none">
+                Logout
+              </span>
             </div>
           </div>
         </div>
@@ -288,7 +283,7 @@ function AdminDashboard() {
                             {/* Left: Profile Photo */}
                             <div className="w-1/4">
                               <img
-                                src={`http://localhost:8000${selectedRequest.profile_photo}`}
+                                src={`${axiosInstance.defaults.baseURL}${selectedRequest.profile_photo}`}
                                 alt="Profile"
                                 className="w-full rounded-2xl border border-gray-200 shadow-sm"
                               />
@@ -296,7 +291,7 @@ function AdminDashboard() {
                                 <a
                                   href={
                                     selectedRequest.educational_certificate
-                                      ? `http://localhost:8000${selectedRequest.educational_certificate}`
+                                      ? `${axiosInstance.defaults.baseURL}${selectedRequest.educational_certificate}`
                                       : "#"
                                   }
                                   target="_blank"
@@ -316,7 +311,7 @@ function AdminDashboard() {
                                 <a
                                   href={
                                     selectedRequest.resume
-                                      ? `http://localhost:8000${selectedRequest.resume}`
+                                      ? `${axiosInstance.defaults.baseURL}${selectedRequest.resume}`
                                       : "#"
                                   }
                                   target="_blank"
@@ -336,7 +331,7 @@ function AdminDashboard() {
                                 <a
                                   href={
                                     selectedRequest.govt_id_file
-                                      ? `http://localhost:8000${selectedRequest.govt_id_file}`
+                                      ? `${axiosInstance.defaults.baseURL}${selectedRequest.govt_id_file}`
                                       : "#"
                                   }
                                   target="_blank"
@@ -362,7 +357,11 @@ function AdminDashboard() {
                                 {selectedRequest.full_name}
                               </p>
                               <p>
-                                <strong>Year/Age:</strong> {selectedRequest.dob_year} ({new Date().getFullYear() - selectedRequest.dob_year} Years)
+                                <strong>Year/Age:</strong>{" "}
+                                {selectedRequest.dob_year} (
+                                {new Date().getFullYear() -
+                                  selectedRequest.dob_year}{" "}
+                                Years)
                               </p>
                               <p>
                                 <strong>Gender:</strong>{" "}

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import axios from "axios";
+import axiosInstance from "@/components/config/axiosInstance";
 
 export default function ChatPage() {
   const params = useParams();
@@ -22,12 +22,8 @@ export default function ChatPage() {
     if (!appointmentId || !userId) return;
 
     const token = localStorage.getItem("access");
-    axios
-      .post(
-        `http://localhost:8000/api/v1/user/chat/${appointmentId}/read/`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+    axiosInstance
+      .post(`api/v1/user/chat/${appointmentId}/read/`, {})
       .catch((err) => console.error("Mark read error:", err));
   }, [messages]);
 
@@ -37,9 +33,8 @@ export default function ChatPage() {
 
     const fetchMessages = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/user/chat/${appointmentId}/`,
-          { headers: { Authorization: `Bearer ${token}` } }
+        const res = await axiosInstance.get(
+          `api/v1/user/chat/${appointmentId}/`
         );
 
         // Save chat info (user/advisor data)
@@ -61,16 +56,11 @@ export default function ChatPage() {
     const token = localStorage.getItem("access");
 
     try {
-      await axios.post(
-        `http://localhost:8000/api/v1/user/chat/${appointmentId}/`,
-        { content: input },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axiosInstance.post(`api/v1/user/chat/${appointmentId}/`, {
+        content: input,
+      });
       setInput("");
-      const res = await axios.get(
-        `http://localhost:8000/api/v1/user/chat/${appointmentId}/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axiosInstance.get(`api/v1/user/chat/${appointmentId}/`);
       setMessages(res.data.messages);
       scrollToBottom();
     } catch (err) {

@@ -17,6 +17,10 @@ function AdvisorsPage() {
   const [categories, setCategories] = useState([]);
   const [refreshReviews, setRefreshReviews] = useState(false); // ✅ add this at top
   const [loggedUserId, setLoggedUserId] = useState(null);
+  const [editingReview, setEditingReview] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // --- Review States ---
   const [userRating, setUserRating] = useState(0);
@@ -37,7 +41,7 @@ function AdvisorsPage() {
     if (!selected) return;
 
     axiosInstance
-      .get(`/api/v1/advisor/ratings-reviews/${selected.id}/`)
+      .get(`api/v1/advisor/ratings-reviews/${selected.id}/`)
       .then((res) => {
         const allReviews = res.data.reviews || [];
         const loggedId = res.data.logged_in_user;
@@ -70,6 +74,33 @@ function AdvisorsPage() {
     };
   }, [selected, refreshReviews]);
 
+  // ✅ Update existing review
+  const handleUpdateReview = async (reviewId) => {
+    if (!editText.trim()) {
+      toast.warning("Please write something before saving.");
+      return;
+    }
+
+    // ✅ Instant UI update
+    setReviews((prev) =>
+      prev.map((r) => (r.id === reviewId ? { ...r, review: editText } : r))
+    );
+    setEditingReviewId(null);
+
+    try {
+      setIsUpdating(true);
+      await axiosInstance.post(`api/v1/advisor/review/${selected.id}/`, {
+        review: editText,
+      });
+      toast.success("Review updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update review.");
+      console.error(err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // ✅ Submit a new review (text-only)
   const submitReview = async () => {
     const token = localStorage.getItem("access");
@@ -85,7 +116,7 @@ function AdvisorsPage() {
     }
 
     try {
-      await axiosInstance.post(`/api/v1/advisor/review/${selected.id}/`, {
+      await axiosInstance.post(`api/v1/advisor/review/${selected.id}/`, {
         review: reviewText,
       });
 
@@ -94,9 +125,7 @@ function AdvisorsPage() {
       setUserHasReviewed(true);
     } catch (err) {
       if (err.response?.status === 403) {
-        toast.info(
-          err.response?.data?.error
-        );
+        toast.info(err.response?.data?.error);
       } else {
         toast.error("Failed to submit review");
       }
@@ -105,7 +134,7 @@ function AdvisorsPage() {
 
   useEffect(() => {
     axiosInstance
-      .get("/api/v1/advisor/advisors-list/") // ✅ no need for full URL now
+      .get("api/v1/advisor/advisors-list/") // ✅ no need for full URL now
       .then((res) => {
         setAdvisors(res.data);
 
@@ -136,7 +165,7 @@ function AdvisorsPage() {
     if (!selected) return;
 
     axiosInstance
-      .get(`/api/v1/user/check-appointment/${selected.id}/`)
+      .get(`api/v1/user/check-appointment/${selected.id}/`)
       .then((res) => {
         setBookingStatus(res.data.status || null);
       })
@@ -315,7 +344,7 @@ function AdvisorsPage() {
                 >
                   <div className="flex items-start gap-3">
                     <img
-                      src={`http://localhost:8000${advisor.profile_photo}`}
+                      src={`${axiosInstance.defaults.baseURL}${advisor.profile_photo}`}
                       alt={advisor.full_name}
                       className="w-15 h-15 rounded-lg"
                     />
@@ -386,7 +415,7 @@ function AdvisorsPage() {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-start gap-4">
                     <img
-                      src={`http://localhost:8000${selected.profile_photo}`}
+                      src={`${axiosInstance.defaults.baseURL}${selected.profile_photo}`}
                       alt={selected.full_name}
                       className="w-20 h-20 rounded-lg"
                     />
@@ -453,6 +482,9 @@ function AdvisorsPage() {
                         Book Appointment
                       </button>
                     )}
+                    <span className="block text-sm mt-1 text-gray-600 text-center">
+                      {selected.completed_appointments} Consultations Completed
+                    </span>
                   </div>
                 </div>
 
@@ -783,7 +815,7 @@ function AdvisorsPage() {
                     Reviews
                   </h3>
 
-                  {/* ✅ Review form: only if user hasn't reviewed */}
+                  {/* ✅ Show review form if user hasn't reviewed yet */}
                   {!userHasReviewed && (
                     <div className="bg-gray-50 p-4 rounded-xl shadow-sm mb-4">
                       <textarea
@@ -792,7 +824,6 @@ function AdvisorsPage() {
                         onChange={(e) => setReviewText(e.target.value)}
                         className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-800"
                       />
-
                       <button
                         onClick={submitReview}
                         className="mt-3 bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
@@ -802,27 +833,68 @@ function AdvisorsPage() {
                     </div>
                   )}
 
-                  {/* ✅ Display reviews (user review always on top) */}
+                  {/* ✅ Reviews list */}
                   <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
                     {reviews.length > 0 ? (
                       <div className="space-y-3 max-h-64 overflow-y-auto">
                         {reviews.map((r) => (
                           <div
                             key={r.id}
-                            className={`border-b border-gray-100 pb-2 ${
-                              r.user_id === loggedUserId
-                                ? "bg-yellow-50 rounded-lg p-2"
-                                : ""
-                            }`}
+                            className="border-b border-gray-100 pb-2"
                           >
                             <p className="font-medium text-gray-800 text-sm">
                               {r.user_id === loggedUserId
                                 ? `You (${r.user})`
                                 : r.user}
                             </p>
-                            <p className="text-gray-600 text-sm mt-1">
-                              {r.review}
-                            </p>
+
+                            {/* ✅ Edit mode for the logged-in user */}
+                            {r.user_id === loggedUserId &&
+                            editingReviewId === r.id ? (
+                              <>
+                                <textarea
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  className="w-full border border-gray-300 rounded-lg p-2 mt-2 text-sm text-gray-800"
+                                />
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    onClick={() => handleUpdateReview(r.id)}
+                                    disabled={isUpdating}
+                                    className={`${
+                                      isUpdating
+                                        ? "bg-gray-400"
+                                        : "bg-green-500 hover:bg-green-600"
+                                    } text-white px-4 py-1 rounded-lg text-sm font-medium transition`}
+                                  >
+                                    {isUpdating ? "Saving..." : "Save Changes"}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingReviewId(null)}
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-1 rounded-lg text-sm font-medium transition"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-gray-600 text-sm mt-1">
+                                  {r.review}
+                                </p>
+                                {r.user_id === loggedUserId && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingReviewId(r.id);
+                                      setEditText(r.review);
+                                    }}
+                                    className="mt-2 text-cyan-600 text-xs font-medium hover:underline"
+                                  >
+                                    Edit Review
+                                  </button>
+                                )}
+                              </>
+                            )}
                           </div>
                         ))}
                       </div>

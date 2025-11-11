@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import axios from "axios";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function Header() {
   const pathname = usePathname();
@@ -42,8 +42,8 @@ useEffect(() => {
 
   const fetchProfileStatus = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:8000/api/v1/user/profile-setup/",
+      const res = await axiosInstance.get(
+        "api/v1/user/profile-setup/",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       setHasProfile(!!res.data.profile_exists);
@@ -68,8 +68,8 @@ useEffect(() => {
 
   const fetchAdvisorStatus = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:8000/api/v1/user/become-advisor/",
+      const res = await axiosInstance.get(
+        "api/v1/user/become-advisor/",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       setAdvisorRequested(!!res.data.requested);
@@ -96,8 +96,8 @@ useEffect(() => {
       }
 
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/user/user-dashboard/",
+        const res = await axiosInstance.get(
+          "api/v1/user/user-dashboard/",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -117,8 +117,8 @@ useEffect(() => {
       if (!user?.email) return;
 
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/advisor/advisors-list/"
+        const res = await axiosInstance.get(
+          "api/v1/advisor/advisors-list/"
         );
         const advisors = res.data;
 
@@ -299,7 +299,7 @@ useEffect(() => {
                   <div className="w-9 h-9 flex items-center justify-center rounded-lg border overflow-hidden border-gray-100 bg-white font-bold text-xl select-none z-50 text-black">
                     {user.profile?.profile_picture ? (
                       <img
-                        src={`http://localhost:8000${user.profile.profile_picture}`}
+                        src={`${axiosInstance.defaults.baseURL}${user.profile.profile_picture}`}
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />

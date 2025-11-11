@@ -114,6 +114,16 @@ class AdvisorAvailabilityView(APIView):
 class AdvisorFeeUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        """Return the logged-in advisor's consultation fee"""
+        try:
+            advisor = Advisor.objects.get(user=request.user)
+        except Advisor.DoesNotExist:
+            return Response({"error": "Not an advisor"}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response({"consultation_fee": advisor.consultation_fee}, status=status.HTTP_200_OK)
+    
+
     def put(self, request):
         try:
             advisor = Advisor.objects.get(user=request.user)
@@ -229,6 +239,22 @@ class AdvisorReviewView(APIView):
 
         message = "Review submitted successfully" if created else "Review updated successfully"
         return Response({"message": message}, status=200)
+    
+    def put(self, request, advisor_id):
+        """Edit an existing review"""
+        try:
+            review = AdvisorReview.objects.get(advisor_id=advisor_id, user=request.user)
+        except AdvisorReview.DoesNotExist:
+            return Response({"error": "No review found to update."}, status=404)
+
+        new_text = request.data.get("review", "").strip()
+        if not new_text:
+            return Response({"error": "Review text is required."}, status=400)
+
+        review.review = new_text
+        review.save()
+
+        return Response({"message": "Review updated successfully"}, status=200)
 
 
 

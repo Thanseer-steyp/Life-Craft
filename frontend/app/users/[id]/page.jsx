@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import axios from "axios";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function UserProfilePage() {
   const { id } = useParams(); // user id from URL
@@ -17,10 +17,10 @@ function UserProfilePage() {
       return;
     }
 
-    const url = `http://localhost:8000/api/v1/user/client/${id || ""}`;
+    const url = `api/v1/user/client/${id || ""}`;
   
-    axios
-      .get(url, { headers: { Authorization: `Bearer ${token}` } })
+    axiosInstance
+      .get(url)
       .then((res) => setUserData(res.data))
       .catch(() => setError("Failed to load user profile."))
       .finally(() => setLoading(false));

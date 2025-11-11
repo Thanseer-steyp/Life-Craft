@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axiosInstance from "@/components/config/axiosInstance";
 
 function Page() {
   const router = useRouter();
@@ -16,8 +16,8 @@ function Page() {
 
     if (accessToken) {
       // Check profile
-      axios
-        .get("http://localhost:8000/api/v1/user/profile-setup/", {
+      axiosInstance
+        .get("api/v1/user/profile-setup/", {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
         .then((res) => {
@@ -26,8 +26,8 @@ function Page() {
         .catch(() => setHasProfile(false));
 
       // Check advisor request
-      axios
-        .get("http://localhost:8000/api/v1/user/become-advisor/", {
+      axiosInstance
+        .get("api/v1/user/become-advisor/", {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
         .then((res) => setAdvisorRequested(res.data.requested))
