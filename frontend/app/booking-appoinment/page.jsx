@@ -2,13 +2,14 @@
 import axiosInstance from "@/components/config/axiosInstance";
 import { AnimatePresence, motion } from "framer-motion";
 import PulseLoader from "react-spinners/PulseLoader";
-import { toast, ToastContainer } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Star } from "lucide-react";
+import { Star,ClipboardPenLine } from "lucide-react";
+import CustomAlert from "@/components/includes/CustomAlert";
 
 function AdvisorsPage() {
   const router = useRouter();
+  const [alert, setAlert] = useState({ message: "", type: "" });
 
   const [advisors, setAdvisors] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -17,20 +18,12 @@ function AdvisorsPage() {
   const [categories, setCategories] = useState([]);
   const [refreshReviews, setRefreshReviews] = useState(false); // ✅ add this at top
   const [loggedUserId, setLoggedUserId] = useState(null);
-  const [editingReview, setEditingReview] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [editText, setEditText] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // --- Review States ---
-  const [userRating, setUserRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
   const [userHasReviewed, setUserHasReviewed] = useState(false);
-  const [averageRating, setAverageRating] = useState(0);
-
-  // New states for day-selection booking
   const [showDaySelect, setShowDaySelect] = useState(false);
   const [availableDates, setAvailableDates] = useState([]); // {day, date}
   const [selectedDay, setSelectedDay] = useState(null);
@@ -77,7 +70,10 @@ function AdvisorsPage() {
   // ✅ Update existing review
   const handleUpdateReview = async (reviewId) => {
     if (!editText.trim()) {
-      toast.warning("Please write something before saving.");
+      setAlert({
+        message: "Please write something before saving.",
+        type: "warning",
+      });
       return;
     }
 
@@ -92,10 +88,12 @@ function AdvisorsPage() {
       await axiosInstance.post(`api/v1/advisor/review/${selected.id}/`, {
         review: editText,
       });
-      toast.success("Review updated successfully!");
+      setAlert({ message: "Review updated successfully", type: "success" });
     } catch (err) {
-      toast.error("Failed to update review.");
-      console.error(err);
+      setAlert({
+        message: err.response?.data?.error || "Failed to update review",
+        type: "error",
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -105,13 +103,16 @@ function AdvisorsPage() {
   const submitReview = async () => {
     const token = localStorage.getItem("access");
     if (!token) {
-      toast.warning("Please login to submit a review.");
+      setAlert({ message: "Please login to submit review", type: "warning" });
       router.push("/authentication");
       return;
     }
 
     if (!reviewText.trim()) {
-      toast.warning("Please write something before submitting.");
+      setAlert({
+        message: "Please write something before submitting",
+        type: "warning",
+      });
       return;
     }
 
@@ -120,14 +121,14 @@ function AdvisorsPage() {
         review: reviewText,
       });
 
-      toast.success("Review submitted successfully!");
+      setAlert({ message: "Review submitted successfully", type: "success" });
       setRefreshReviews((prev) => !prev);
       setUserHasReviewed(true);
     } catch (err) {
       if (err.response?.status === 403) {
-        toast.info(err.response?.data?.error);
+        setAlert({ message: err.response?.data?.error, type: "error" });
       } else {
-        toast.error("Failed to submit review");
+        setAlert({ message: "Failed to submit review", type: "error" });
       }
     }
   };
@@ -177,13 +178,16 @@ function AdvisorsPage() {
     const token = localStorage.getItem("access");
 
     if (!token) {
-      toast.warning("Please login to book an appointment.");
+      setAlert({
+        message: "Please login to book an appointment",
+        type: "warning",
+      });
       router.push("/authentication");
       return;
     }
 
     if (!advisor || !advisor.availability) {
-      toast.warning("Advisor availability not found.");
+      setAlert({ message: "Advisor availability not found", type: "warning" });
       return;
     }
 
@@ -193,7 +197,10 @@ function AdvisorsPage() {
       .map((slot) => slot.day.toLowerCase());
 
     if (availableDays.length === 0) {
-      toast.warning("This advisor has no available days.");
+      setAlert({
+        message: "This advisor has no available days.",
+        type: "warning",
+      });
       return;
     }
 
@@ -244,17 +251,23 @@ function AdvisorsPage() {
   // Confirm booking: send advisor_id and preferred_day (YYYY-MM-DD) to backend
   const confirmBooking = async () => {
     if (!selectedDay) {
-      toast.warning("Please select a date first.");
+      setAlert({ message: "Please select a date first", type: "warning" });
       return;
     }
     if (!communicationMethod) {
-      toast.warning("Please select a communication method.");
+      setAlert({
+        message: "Please select a communication method",
+        type: "warning",
+      });
       return;
     }
 
     const token = localStorage.getItem("access");
     if (!token) {
-      toast.warning("Please login to book an appointment.");
+      setAlert({
+        message: "Please login to book appointment",
+        type: "warning",
+      });
       router.push("/authentication");
       return;
     }
@@ -267,9 +280,10 @@ function AdvisorsPage() {
         communication_method: communicationMethod,
       });
       await new Promise((res) => setTimeout(res, 5000));
-      toast.success(
-        `Appointment booked successfully for ${selectedDay}. Thank You`
-      );
+      setAlert({
+        message: `Appointment booked successfully for ${selectedDay}`,
+        type: "success",
+      });
       setShowDaySelect(false);
       setSelectedDay(null);
       setSelected(null);
@@ -278,7 +292,7 @@ function AdvisorsPage() {
         err?.response?.data?.error ||
         err?.response?.data ||
         "Failed to book appointment";
-      toast.error(errMsg);
+      setAlert({ message: errMsg, type: "error" });
     } finally {
       setIsBooking(false);
     }
@@ -840,9 +854,9 @@ function AdvisorsPage() {
                         {reviews.map((r) => (
                           <div
                             key={r.id}
-                            className="border-b border-gray-100 pb-2"
+                            className="border-b border-gray-100"
                           >
-                            <p className="font-medium text-gray-800 text-sm">
+                            <p className="font-medium text-gray-800 text-xs">
                               {r.user_id === loggedUserId
                                 ? `You (${r.user})`
                                 : r.user}
@@ -878,8 +892,8 @@ function AdvisorsPage() {
                                 </div>
                               </>
                             ) : (
-                              <>
-                                <p className="text-gray-600 text-sm mt-1">
+                              <div className="flex justify-between">
+                                <p className="text-gray-600 text-base first-letter:uppercase mt-1">
                                   {r.review}
                                 </p>
                                 {r.user_id === loggedUserId && (
@@ -888,12 +902,12 @@ function AdvisorsPage() {
                                       setEditingReviewId(r.id);
                                       setEditText(r.review);
                                     }}
-                                    className="mt-2 text-cyan-600 text-xs font-medium hover:underline"
+                                    className="text-cyan-600 text-xs font-medium hover:underline"
                                   >
-                                    Edit Review
+                                    <ClipboardPenLine className="w-4 h-4 text-black" />
                                   </button>
                                 )}
-                              </>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -1045,7 +1059,11 @@ function AdvisorsPage() {
           </motion.div>
         </AnimatePresence>
       )}
-      <ToastContainer position="top-right" autoClose={3000} />
+      <CustomAlert
+        message={alert.message}
+        type={alert.type}
+        onClose={() => setAlert({ message: "", type: "" })}
+      />
     </div>
   );
 }

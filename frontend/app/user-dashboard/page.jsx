@@ -98,7 +98,7 @@ export default function DashboardPage() {
           <img
             src={`${axiosInstance.defaults.baseURL}${profile.profile_picture}`}
             alt="Profile"
-            className="h-32 w-32 object-cover rounded-full mt-2"
+            className="h-32 w-32 rounded-full mt-2"
           />
         )}
       </div>

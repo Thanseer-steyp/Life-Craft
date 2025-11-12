@@ -49,7 +49,7 @@ function UserProfilePage() {
           <img
             src={userData.profile_image}
             alt="Profile"
-            className="h-32 w-32 object-cover rounded-full mt-4"
+            className="h-32 w-32 rounded-full mt-4"
           />
         )}
       </div>

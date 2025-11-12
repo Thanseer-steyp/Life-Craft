@@ -301,7 +301,7 @@ useEffect(() => {
                       <img
                         src={`${axiosInstance.defaults.baseURL}${user.profile.profile_picture}`}
                         alt="Profile"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full"
                       />
                     ) : (
                       user?.name?.[0]?.toUpperCase() ||

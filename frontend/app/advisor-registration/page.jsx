@@ -409,9 +409,7 @@ function BecomeAdvisorForm() {
         }
       });
 
-      // Debug: Log the payload to see what's being sent
-      console.log("Form data being sent:", formData);
-      console.log("Uploaded files:", uploadedFiles);
+
 
       const response = await axiosInstance.post(
         "api/v1/user/become-advisor/",

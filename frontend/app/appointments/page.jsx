@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
 import axiosInstance from "@/components/config/axiosInstance";
+import CustomAlert from "@/components/includes/CustomAlert";
 
 function UserDashboard() {
   const COMMUNICATION_LABELS = {
@@ -13,6 +13,7 @@ function UserDashboard() {
   };
 
   const router = useRouter();
+  const [alert, setAlert] = useState({ message: "", type: "" });
   const [appointments, setAppointments] = useState([]);
   const [ratings, setRatings] = useState({}); // Store temporary rating values
 
@@ -30,31 +31,41 @@ function UserDashboard() {
       await axiosInstance.post(
         `api/v1/user/appointment/${appointmentId}/attended/`
       );
-      toast.success("Appointment marked as attended!");
+      setAlert({ message: "Appointment mark as attended", type: "success" });
       setAppointments((prev) =>
         prev.map((appt) =>
           appt.id === appointmentId ? { ...appt, is_attended: true } : appt
         )
       );
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to mark as attended");
+      setAlert({
+        message: err.response?.data?.error || "Failed to mark as attended",
+        type: "error",
+      });
     }
   };
 
   // ✅ Submit rating
   const handleSubmitRating = async (appointmentId) => {
     const ratingValue = ratings[appointmentId];
+  
+    // ⚠️ If no rating selected
     if (!ratingValue) {
-      toast.error("Please select a rating before submitting");
+      setAlert({
+        message: "Please select a rating before submitting",
+        type: "warning",
+      });
       return;
     }
-
+  
     try {
+      // ✅ Submit rating to backend
       await axiosInstance.post(
         `api/v1/advisor/rate-appointment/${appointmentId}/`,
         { rating: ratingValue }
       );
-      toast.success("Rating submitted successfully!");
+  
+      // ✅ Update state
       setAppointments((prev) =>
         prev.map((appt) =>
           appt.id === appointmentId
@@ -62,10 +73,21 @@ function UserDashboard() {
             : appt
         )
       );
+  
+      // ✅ Show success alert
+      setAlert({
+        message: `You rated this appointment ${ratingValue} ★ successfully!`,
+        type: "success",
+      });
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to submit rating");
+      // ❌ Show error alert
+      setAlert({
+        message: err.response?.data?.error || "Failed to submit rating",
+        type: "error",
+      });
     }
   };
+  
 
   // ✅ Check if appointment time has passed
   const canMarkAsAttended = (appt) => {
@@ -213,6 +235,11 @@ function UserDashboard() {
           ))}
         </ul>
       )}
+      <CustomAlert
+        message={alert.message}
+        type={alert.type}
+        onClose={() => setAlert({ message: "", type: "" })}
+      />
     </div>
   );
 }
