@@ -25,31 +25,17 @@ class ProfileSerializer(serializers.ModelSerializer):
             "phone_number",
             "country",
             "state",
-            "profile_picture",
-            "interests",
             "job",
             "monthly_income",
+            "interests",
             "bio",
             "retirement_planning_age",
-            "current_savings",
-            "expected_savings_at_retirement",
-            "post_retirement_travel",
-            "post_retirement_hobbies",
-            "post_retirement_family_together",
-            "post_retirement_social_work",
-            "post_retirement_garage",
-            "post_retirement_luxury_life",
-            "retirement_location_preference",
-            "dream_type",
-            "top_dream_1",
-            "top_dream_2",
-            "top_dream_3",
-            "top_dream_priorities",
-            "dream_description",
-            "initial_plan",
-            "created_at",
+            "current_assets",
+            "post_retirement_life_plans",
+            "post_retirement_location_preferences",
+            "dreams",
         ]
-        read_only_fields = ["id", "created_at", "full_name", "username", "email"]
+        read_only_fields = ["id", "full_name", "username", "email"]
 
     def get_full_name(self, obj):
         user = self.context.get("user")
@@ -68,6 +54,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         if user:
             return user.email
         return None
+
     
 
 class UserDashboardSerializer(serializers.ModelSerializer):

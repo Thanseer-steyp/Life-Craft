@@ -35,58 +35,59 @@ function Header() {
     };
   }, [showMenu]);
 
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access");
+    if (!accessToken) return;
 
-useEffect(() => {
-  const accessToken = localStorage.getItem("access");
-  if (!accessToken) return;
+    const fetchProfileStatus = async () => {
+      try {
+        const res = await axiosInstance.get("api/v1/user/profile-setup/", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        setHasProfile(!!res.data.profile_exists);
+      } catch {
+        setHasProfile(false);
+      }
+    };
 
-  const fetchProfileStatus = async () => {
-    try {
-      const res = await axiosInstance.get(
-        "api/v1/user/profile-setup/",
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+    fetchProfileStatus();
+
+    // 🔹 Re-fetch when profile changes (e.g. after profile setup)
+    const handleProfileUpdate = () => fetchProfileStatus();
+    window.addEventListener("profile-updated", handleProfileUpdate);
+
+    return () =>
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+  }, []);
+
+  // ✅ 2️⃣ Check Advisor Request
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access");
+    if (!accessToken) return;
+
+    const fetchAdvisorStatus = async () => {
+      try {
+        const res = await axiosInstance.get("api/v1/user/become-advisor/", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        setAdvisorRequested(!!res.data.requested);
+      } catch {
+        setAdvisorRequested(false);
+      }
+    };
+
+    fetchAdvisorStatus();
+
+    // 🔹 Re-fetch when advisor request changes
+    const handleAdvisorUpdate = () => fetchAdvisorStatus();
+    window.addEventListener("advisor-request-updated", handleAdvisorUpdate);
+
+    return () =>
+      window.removeEventListener(
+        "advisor-request-updated",
+        handleAdvisorUpdate
       );
-      setHasProfile(!!res.data.profile_exists);
-    } catch {
-      setHasProfile(false);
-    }
-  };
-
-  fetchProfileStatus();
-
-  // 🔹 Re-fetch when profile changes (e.g. after profile setup)
-  const handleProfileUpdate = () => fetchProfileStatus();
-  window.addEventListener("profile-updated", handleProfileUpdate);
-
-  return () => window.removeEventListener("profile-updated", handleProfileUpdate);
-}, []);
-
-// ✅ 2️⃣ Check Advisor Request
-useEffect(() => {
-  const accessToken = localStorage.getItem("access");
-  if (!accessToken) return;
-
-  const fetchAdvisorStatus = async () => {
-    try {
-      const res = await axiosInstance.get(
-        "api/v1/user/become-advisor/",
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      setAdvisorRequested(!!res.data.requested);
-    } catch {
-      setAdvisorRequested(false);
-    }
-  };
-
-  fetchAdvisorStatus();
-
-  // 🔹 Re-fetch when advisor request changes
-  const handleAdvisorUpdate = () => fetchAdvisorStatus();
-  window.addEventListener("advisor-request-updated", handleAdvisorUpdate);
-
-  return () => window.removeEventListener("advisor-request-updated", handleAdvisorUpdate);
-}, []);
-
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -96,12 +97,7 @@ useEffect(() => {
       }
 
       try {
-        const res = await axiosInstance.get(
-          "api/v1/user/user-dashboard/",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await axiosInstance.get("api/v1/user/user-dashboard/");
         setUser(res.data);
       } catch (err) {
         console.error(err);
@@ -117,9 +113,7 @@ useEffect(() => {
       if (!user?.email) return;
 
       try {
-        const res = await axiosInstance.get(
-          "api/v1/advisor/advisors-list/"
-        );
+        const res = await axiosInstance.get("api/v1/advisor/advisors-list/");
         const advisors = res.data;
 
         const isAdvisor = advisors.some(

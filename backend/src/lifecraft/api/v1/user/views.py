@@ -32,24 +32,33 @@ class ProfileSetupView(APIView):
             # Return empty/default structure instead of creating a profile
             return Response(
         {
+            "user": {
+                    "username": request.user.username,
+                    "email": request.user.email,
+                    "full_name": request.user.get_full_name(),
+                },
             "profile_exists": False,
-            "data": "Profile not set up yet.",
+            "message" : "Profile not setup yet.",
         },
         status=status.HTTP_200_OK,
     )
 
     def post(self, request):
-        try:
-            profile = request.user.profile
-            serializer = ProfileSerializer(profile, data=request.data, partial=True, context={"user": request.user})
-        except Profile.DoesNotExist:
-            # Create a new profile only when user submits data
-            serializer = ProfileSerializer(data=request.data, context={"user": request.user})
+        if Profile.objects.filter(user=request.user).exists():
+            return Response(
+                {"error": "Profile already created"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+    # If profile doesn't exist → create it
+        serializer = ProfileSerializer(data=request.data, context={"user": request.user})
+    
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
