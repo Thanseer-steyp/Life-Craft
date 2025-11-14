@@ -1,878 +1,782 @@
 "use client";
-
-import React, { useEffect, useRef, useState } from "react";
-import { User, FileText, Settings, Calendar } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import axiosInstance from "@/components/config/axiosInstance";
 import CustomAlert from "@/components/includes/CustomAlert";
 
-export default function ProfileDashboardMerged() {
-  const router = useRouter();
-
-  // --- original form state (kept as-is) ---
-  const [formData, setFormData] = useState({
-    dob: "",
-    gender: "",
-    marital_status: "",
-    phone_number: "",
-    country: "India",
-    state: "",
-    profile_picture: null,
-    interests: "",
-    job: "",
-    monthly_income: "",
-    bio: "",
-    retirement_planning_age: "",
-    current_savings: "",
-    expected_savings_at_retirement: "",
-    post_retirement_options: [],
-    retirement_location_preference: "",
-    dream_type: "",
-    top_dream_1: "",
-    top_dream_2: "",
-    top_dream_3: "",
-    top_dream_priorities: "",
-    initial_plan: "",
-    dream_description: "",
-  });
-
-  const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState(null);
-  const [userFullName, setUserFullName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-  const [userName, setUserName] = useState("");
+function ProfileSetupForm() {
+  const [profileExists, setProfileExists] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [editing, setEditing] = useState(false);
   const [alert, setAlert] = useState({ message: "", type: "" });
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  // NEW: read-only mode after successful save
-  const [readOnly, setReadOnly] = useState(true);
-
-  // section refs for smooth scrolling
-  const personalRef = useRef(null);
-  const retirementRef = useRef(null);
-  const lifestyleRef = useRef(null);
-  const dreamsRef = useRef(null);
+  const formRef = useRef(null);
 
   useEffect(() => {
-    const access = localStorage.getItem("access");
-    setToken(access);
+    const fetchProfile = async () => {
+      try {
+        const res = await axiosInstance.get("api/v1/user/profile-setup/");
+        setProfileExists(res.data.profile_exists);
 
-    if (access) {
-      axiosInstance
-        .get("api/v1/user/user-dashboard/")
-        .then((res) => {
-          setUserFullName(res.data.name || "");
-          setUserEmail(res.data.email || "");
-          setUserName(res.data.username || "");
+        if (res.data.profile_exists) {
+          setProfileData(res.data.data);
+          setUserData({
+            username: res.data.data.username,
+            email: res.data.data.email,
+            full_name: res.data.data.full_name,
+            profile_picture: res.data.data.profile_picture,
+          });
+        } else {
+          // Profile doesn't exist, use user data from response
+          setUserData(res.data.user);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          // If backend returns existing profile data, populate formData (safe-guard)
-          const profile = res.data.profile || null;
-          if (profile) {
-            // Map backend fields if available — only set if value exists
-            setFormData((prev) => ({
-              ...prev,
-              dob: profile.dob || prev.dob,
-              gender: profile.gender || prev.gender,
-              marital_status: profile.marital_status || prev.marital_status,
-              phone_number: profile.phone_number || prev.phone_number,
-              country: profile.country || prev.country,
-              state: profile.state || prev.state,
-              // NOTE: profile_picture is a URL from backend; keep preview and don't set File object
-              interests: profile.interests || prev.interests,
-              job: profile.job || prev.job,
-              monthly_income: profile.monthly_income || prev.monthly_income,
-              bio: profile.bio || prev.bio,
-              retirement_planning_age:
-                profile.retirement_planning_age || prev.retirement_planning_age,
-              current_savings: profile.current_savings || prev.current_savings,
-              expected_savings_at_retirement:
-                profile.expected_savings_at_retirement ||
-                prev.expected_savings_at_retirement,
-              post_retirement_options:
-                profile.post_retirement_options || prev.post_retirement_options,
-              retirement_location_preference:
-                profile.retirement_location_preference ||
-                prev.retirement_location_preference,
-              dream_type: profile.dream_type || prev.dream_type,
-              top_dream_1: profile.top_dream_1 || prev.top_dream_1,
-              top_dream_2: profile.top_dream_2 || prev.top_dream_2,
-              top_dream_3: profile.top_dream_3 || prev.top_dream_3,
-              dream_description:
-                profile.dream_description || prev.dream_description,
-              initial_plan: profile.initial_plan || prev.initial_plan,
-            }));
-
-            if (profile.profile_picture) {
-              let imageUrl = profile.profile_picture;
-              // ✅ ensure it's an absolute URL
-              if (!/^https?:\/\//i.test(imageUrl)) {
-                imageUrl = `${axiosInstance.defaults.baseURL.replace(
-                  /\/$/,
-                  ""
-                )}${imageUrl}`;
-              }
-              setPreview(imageUrl);
-            }
-
-            // If profile has been completed previously, lock the form
-            if (profile.is_completed) {
-              setReadOnly(true);
-            }
-          }
-        })
-        .catch((err) => console.error(err));
-    }
+    fetchProfile();
   }, []);
 
-  const fetchUserProfile = async () => {
+  const [assets, setAssets] = useState([{ type: "" }]);
+  const assetTypes = ["Cash", "Vehicles", "Gold", "House", "Land"];
+
+  const addAsset = () => {
+    if (assets.length < 5) setAssets([...assets, { type: "" }]);
+  };
+
+  const updateAsset = (index, value) => {
+    const updated = [...assets];
+    updated[index].type = value;
+    setAssets(updated);
+  };
+
+  const removeAsset = (index) => {
+    setAssets(assets.filter((_, i) => i !== index));
+  };
+
+  const usedAssetTypes = assets.map((a) => a.type).filter(Boolean);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    const previewURL = URL.createObjectURL(file);
+    setPreviewImage(previewURL);
+  };
+
+  const handleSubmit = async () => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData();
+
+    // File
+
+    if (selectedFile) {
+      formData.append("profile_picture", selectedFile);
+    }
+
+    // Normal text fields
+    formData.append("dob", form.querySelector('[name="dob"]').value);
+    formData.append("gender", form.querySelector('[name="gender"]').value);
+    formData.append(
+      "marital_status",
+      form.querySelector('[name="marital_status"]').value
+    );
+    formData.append("phone_number", form.querySelector('[name="phone"]').value);
+    formData.append("country", form.querySelector('[name="country"]').value);
+    formData.append("state", form.querySelector('[name="state"]').value);
+    formData.append("job", form.querySelector('[name="job"]').value || "");
+    formData.append(
+      "monthly_income",
+      form.querySelector('[name="monthly_income"]').value || ""
+    );
+    formData.append(
+      "interests",
+      form.querySelector('[name="interests"]').value || ""
+    );
+    formData.append("bio", form.querySelector('[name="bio"]').value || "");
+    formData.append(
+      "retirement_planning_age",
+      form.querySelector('[name="retirement_age"]').value
+    );
+    formData.append(
+      "post_retirement_life_plans",
+      form.querySelector('[name="post_life_plans"]').value || ""
+    );
+    formData.append(
+      "post_retirement_location_preferences",
+      form.querySelector('[name="retirement_location"]').value || ""
+    );
+    formData.append(
+      "dreams",
+      form.querySelector('[name="dreams"]').value || ""
+    );
+
+    // Assets → array
+    assets.forEach((asset, index) => {
+      formData.append(`current_assets[${index}]`, asset.type);
+    });
+
     try {
-      const res = await axiosInstance.get("api/v1/user/user-dashboard/");
-      const profile = res.data.profile || {};
+      let res;
 
-      setFormData((prev) => ({
-        ...prev,
-        ...profile,
-      }));
-
-      if (profile) {
-        setFormData((prev) => ({
-          ...prev,
-          // ...existing field assignments...
-        }));
-
-        if (profile.profile_picture) {
-          let imageUrl = profile.profile_picture;
-          if (!/^https?:\/\//i.test(imageUrl)) {
-            imageUrl = `${axiosInstance.defaults.baseURL.replace(
-              /\/$/,
-              ""
-            )}${imageUrl}`;
-          }
-          setPreview(imageUrl);
-        }
-
-        const hasAnyData = Object.values(profile || {}).some(
-          (v) => v && v !== ""
-        );
-        setReadOnly(hasAnyData); // ✅ lock if profile already filled
+      if (editing) {
+        // UPDATE existing profile
+        res = await axiosInstance.put("/api/v1/user/profile-setup/", formData);
+        setAlert({ message: "Profile edited successfully", type: "success" });
+      } else {
+        // CREATE new profile
+        res = await axiosInstance.post("/api/v1/user/profile-setup/", formData);
+        setAlert({ message: "Profile created Successfully", type: "success" });
       }
-    } catch (err) {
-      console.error("Failed to fetch updated profile:", err);
-    }
-  };
 
-  // POST_RETIREMENT_CHOICES kept same
-  const POST_RETIREMENT_CHOICES = [
-    "Travel",
-    "Hobbies",
-    "Family Together",
-    "Social Work",
-    "Garage/Car Projects",
-    "Luxury Life",
-  ];
+      
 
-  const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
-    if (readOnly) return; // prevent changes when read-only
-
-    if (type === "checkbox" && name === "post_retirement_options") {
-      let updated = [...formData.post_retirement_options];
-      if (checked) updated.push(value);
-      else updated = updated.filter((item) => item !== value);
-      setFormData({ ...formData, post_retirement_options: updated });
-    } else if (type === "file") {
-      setFormData({ ...formData, profile_picture: files[0] });
-      setPreview(URL.createObjectURL(files[0]));
-    } else if (type === "checkbox") {
-      setFormData({ ...formData, [name]: checked });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
-  // --- handleSubmit: preserved logic, but sets readOnly on success ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!token) {
-      setAlert({
-        message: "You must be logged in to submit your profile.",
-        type: "warning",
+      // 🔥 Switch to details view immediately
+      setProfileExists(true);
+      setProfileData(res.data);
+      setEditing(false); // Go back to details view
+      setUserData({
+        username: res.data.username,
+        email: res.data.email,
+        full_name: res.data.full_name,
+        profile_picture: res.data.profile_picture,
       });
-      return;
-    }
-
-    setLoading(true);
-    setAlert({ message: "", type: "" });
-
-    try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (Array.isArray(value)) value.forEach((v) => data.append(key, v));
-        else if (value !== null && typeof value !== "undefined")
-          data.append(key, value);
-      });
-
-      await axiosInstance.post("api/v1/user/profile-setup/", data);
-
-      // ✅ Re-fetch updated profile to get new image URL
-      await fetchUserProfile();
-
-      setAlert({ message: "Profile created successfully!", type: "success" });
-      setReadOnly(true);
-      window.dispatchEvent(new Event("profile-updated"));
-    } catch (err) {
-      console.error(err);
-      setAlert({
-        message: "Failed to save profile. Please try again.",
-        type: "error",
-      });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      if (error.response?.data?.error === "Profile already created") {
+        alert("You already submitted your profile.");
+      } else {
+        alert("Failed to submit");
+      }
     }
   };
 
-  // Smooth scroll handler
-  const scrollTo = (refName) => {
-    const map = {
-      personal: personalRef,
-      retirement: retirementRef,
-      lifestyle: lifestyleRef,
-      dreams: dreamsRef,
-    };
-    const ref = map[refName];
-    if (ref && ref.current) {
-      ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+  // Get initials for avatar
+  const getInitials = (name) => {
+    if (!name) return "USER";
+    return name.charAt(0).toUpperCase();
   };
 
-  // avatar initial
-  const avatarInitial = userFullName
-    ? userFullName.trim().charAt(0).toUpperCase()
-    : userName?.charAt(0)?.toUpperCase() || "U";
+  // Get display image
+  const getDisplayImage = () => {
+    if (previewImage) return previewImage;
 
+    if (userData?.profile_picture) {
+      const base = axiosInstance.defaults.baseURL?.replace(/\/$/, "");
+      const filePath = userData.profile_picture.replace(/^\//, "");
+      return `${base}/${filePath}`;
+    }
+
+    return null;
+  };
+
+  // 🟡 Loading state
+  if (loading)
+    return <p className="text-center p-6 text-gray-600">Loading...</p>;
+
+  // Main layout with sidebar
   return (
-    <div className="bg-gray-50 p-8 text-black min-h-[calc(100vh - 68px)]">
-      <div className="w-4/5 mx-auto">
-        <div className="bg-white rounded-xl shadow-sm ">
-          <div className="flex">
-            {/* Sidebar */}
-            <aside className="w-1/4 border-r border-gray-200 p-6">
-              <div className="text-center mb-8">
-                <div className="relative w-20 h-20 mx-auto mb-3">
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden border border-gray-200"
-                    style={{
-                      background: preview
-                        ? "transparent"
-                        : "linear-gradient(135deg,#60a5fa,#a78bfa)",
-                    }}
-                  >
-                    {preview ? (
-                      <img
-                        src={preview}
-                        alt="avatar"
-                        className="w-full h-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white text-2xl font-semibold">
-                        {avatarInitial}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Hidden file input */}
-                  {!readOnly && (
-                    <>
-                      <input
-                        id="profile_upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              profile_picture: file,
-                            }));
-                            setPreview(URL.createObjectURL(file));
-                          }
-                        }}
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="profile_upload"
-                        className="absolute bottom-0 right-0 bg-gray-600 p-1.5 rounded-full text-white cursor-pointer hover:bg-blue-700"
-                        title="Upload new picture"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          class="lucide lucide-switch-camera-icon lucide-switch-camera"
-                        >
-                          <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
-                          <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" />
-                          <circle cx="12" cy="12" r="3" />
-                          <path d="m18 22-3-3 3-3" />
-                          <path d="m6 2 3 3-3 3" />
-                        </svg>
-                      </label>
-                    </>
-                  )}
-                </div>
-
-                <h2 className="font-semibold text-gray-900">
-                  {userFullName || userName || "User"}
-                </h2>
-                <p className="text-sm text-gray-500">{userEmail || "—"}</p>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Left Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 p-6 flex flex-col items-center">
+        <div className="text-center">
+          {/* Profile Picture / Avatar */}
+          <div className="mb-4 relative w-32 h-32 mx-auto">
+            {/* IMAGE OR INITIALS */}
+            {getDisplayImage() ? (
+              <img
+                src={getDisplayImage()}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover border-4 border-gray-100"
+              />
+            ) : (
+              <div className="w-32 h-32 rounded-full flex items-center justify-center text-black text-4xl font-bold border border-gray-200">
+                {getInitials(userData?.full_name || userData?.username)}
               </div>
+            )}
 
-              <nav className="space-y-1">
-                <button
-                  onClick={() => scrollTo("personal")}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm bg-gray-100 text-gray-900 rounded-lg font-medium"
+            {/* CAMERA CHANGE ICON */}
+            {(!profileExists || editing) && (
+              <>
+                <label
+                  htmlFor="profilePicInput"
+                  className="absolute bottom-1 right-1 bg-black/80 text-white p-2 rounded-full cursor-pointer hover:bg-black/80 transition"
                 >
-                  <User className="w-4 h-4" /> Personal Information
-                </button>
-
-                <button
-                  onClick={() => scrollTo("retirement")}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
-                >
-                  <FileText className="w-4 h-4" /> Retirement Plans
-                </button>
-
-                <button
-                  onClick={() => scrollTo("lifestyle")}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
-                >
-                  <Settings className="w-4 h-4" /> Post-Retirement Lifestyle
-                </button>
-
-                <button
-                  onClick={() => scrollTo("dreams")}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
-                >
-                  <Calendar className="w-4 h-4" /> Dream Plans
-                </button>
-              </nav>
-
-              {/* Edit toggle shown when readOnly is true */}
-              {readOnly && (
-                <div className="mt-6">
-                  <button
-                    onClick={() => setReadOnly(false)}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    Edit Profile
-                  </button>
-                </div>
-              )}
-            </aside>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 7h4l1-2h8l1 2h4v13H3V7zm9 3a4 4 0 100 8 4 4 0 000-8z"
+                    />
+                  </svg>
+                </label>
 
-            {/* Main Content Area */}
-            <main
-              className="flex-1 p-8 overflow-y-auto"
+                {/* HIDDEN INPUT */}
+                <input
+                  id="profilePicInput"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </>
+            )}
+          </div>
+
+          {/* User Info */}
+          <h2 className="text-xl font-bold text-gray-900 mb-1">
+            {userData?.full_name || userData?.username || "User"}
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">{userData?.email}</p>
+
+          {/* Edit Profile Button - Only show when profile exists */}
+          {profileExists && (
+            <button
+              onClick={() => {
+                if (editing) {
+                  handleSubmit(); // when already editing → save profile
+                } else {
+                  setEditing(true); // go into edit mode
+                }
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
             >
-              <form onSubmit={handleSubmit} className="space-y-8 pr-4">
-                {/* Account Info (read-only) */}
-                <section className="mb-6 p-4 bg-gray-50 shadow-xl rounded-xl">
-                  <h3 className="text-3xl font-bold mb-2 text-center">
-                    Complete Your Profile
-                  </h3>
-                  <p className="text-sm text-gray-500 text-center">
-                    Fill the details below and click Save Profile
-                  </p>
-                </section>
+              {editing ? "Save Profile" : "Edit Profile"}
+            </button>
+          )}
+        </div>
+      </div>
 
-                {/* Personal Information */}
-                <section
-                  ref={personalRef}
-                  id="personal"
-                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
-                >
-                  <div className="flex items-center gap-3 my-5">
-                    <hr className="flex-grow border-gray-300" />
-                    <h3 className="text-xl font-semibold whitespace-nowrap">
-                      Personal Information
-                    </h3>
-                    <hr className="flex-grow border-gray-300" />
-                  </div>
+      {/* Main Content Area */}
+      <div className="flex-1 p-8">
+        {profileExists && profileData && !editing ? (
+          // 🟢 Profile Details View (styled like form)
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Your Profile
+              </h1>
+              <p className="text-gray-500">View your profile information</p>
+            </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="dob"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+              {/* Personal Information Section */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                  Personal Information
+                </h2>
+
+                <div className="space-y-6">
+                  {/* DOB + Gender */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Date of Birth
                       </label>
-                      <input
-                        id="dob"
-                        type="date"
-                        name="dob"
-                        value={formData.dob}
-                        onChange={handleChange}
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {new Date(profileData.dob).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Age
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.age}
+                      </div>
                     </div>
 
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="gender"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Gender
                       </label>
-                      <select
-                        id="gender"
-                        name="gender"
-                        value={formData.gender}
-                        onChange={handleChange}
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      >
-                        <option value="">Select Gender</option>
-                        <option value="men">Male</option>
-                        <option value="women">Female</option>
-                      </select>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.gender}
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="marital_status"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                  {/* Marital + Phone */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Maritial Status
                       </label>
-                      <select
-                        id="marital_status"
-                        name="marital_status"
-                        value={formData.marital_status}
-                        onChange={handleChange}
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      >
-                        <option value="">Select Marital Status</option>
-                        <option value="single">Single</option>
-                        <option value="married">Married</option>
-                        <option value="divorced">Divorced</option>
-                      </select>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.marital_status}
+                      </div>
                     </div>
-
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="phone_number"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        id="phone_number"
-                        name="phone_number"
-                        value={formData.phone_number}
-                        onChange={handleChange}
-                        placeholder="Phone Number"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
-                    </div>
-
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="country"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Country
-                      </label>
-                      <select
-                        id="country"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      >
-                        <option value="India">India</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="state"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        State
-                      </label>
-                      <select
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleChange}
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      >
-                        <option value="">Select State</option>
-                        <option value="Kerala">Kerala</option>
-                        <option value="Tamil Nadu">Tamil Nadu</option>
-                        <option value="Karnataka">Karnataka</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="job"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Job
                       </label>
-                      <input
-                        id="job"
-                        type="text"
-                        name="job"
-                        value={formData.job}
-                        onChange={handleChange}
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.job || "—"}
+                      </div>
                     </div>
 
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="monthly_income"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Monthly Income
                       </label>
-                      <input
-                        id="monthly_income"
-                        type="number"
-                        name="monthly_income"
-                        value={formData.monthly_income}
-                        onChange={handleChange}
-                        placeholder="Monthly Income"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.monthly_income || "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Country + State */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.phone_number}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Country
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.country}
+                      </div>
                     </div>
 
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="interests"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.state}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Interests
+                      </label>
+                      <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                        {profileData.interests || "—"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Bio
+                      </label>
+                      <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                        {profileData.bio || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Retirement Planning Section */}
+              <div className="pt-6 border-t border-gray-200">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                  Retirement Planning
+                </h2>
+
+                <div className="space-y-6">
+                  {/* Retirement Age */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Retirement Planning Age
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.retirement_planning_age}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Time Left To Retire
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.retirement_time_left}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Assets */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Assets
+                    </label>
+                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                      {profileData.current_assets?.length
+                        ? profileData.current_assets.join(", ")
+                        : "—"}
+                    </div>
+                  </div>
+
+                  {/* Post Retirement Plans */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Post-Retirement Life Plans
+                    </label>
+                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                      {profileData.post_retirement_life_plans || "—"}
+                    </div>
+                  </div>
+
+                  {/* Location Preference */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Post-Retirement Location Preferences
+                    </label>
+                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                      {profileData.post_retirement_location_preferences || "—"}
+                    </div>
+                  </div>
+
+                  {/* Dreams */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Describe Your Dreams
+                    </label>
+                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                      {profileData.dreams || "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // 🟣 Profile Setup Form
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Complete Your Profile
+              </h1>
+              <p className="text-gray-500">
+                Fill the details below and click Save Profile
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+              <div ref={formRef} className="space-y-8">
+                {/* Personal Information Section */}
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                    Personal Information
+                  </h2>
+
+                  <div className="space-y-6">
+                    {/* DOB + Gender */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Date of Birth
+                        </label>
+                        <input
+                          type="date"
+                          defaultValue={profileData?.dob || ""}
+                          name="dob"
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Gender
+                        </label>
+                        <select
+                          name="gender"
+                          defaultValue={profileData?.gender || ""}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        >
+                          <option value="">Select Gender</option>
+                          <option>Male</option>
+                          <option>Female</option>
+                          <option>Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Marital + Phone */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Maritial Status
+                        </label>
+                        <select
+                          name="marital_status"
+                          defaultValue={profileData?.marital_status || ""}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        >
+                          <option value="">Select Marital Status</option>
+                          <option>Single</option>
+                          <option>Married</option>
+                          <option>Divorced</option>
+                          <option>Widowed</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Phone Number
+                        </label>
+                        <input
+                          type="text"
+                          name="phone"
+                          defaultValue={profileData?.phone_number || ""}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Country + State */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Country
+                        </label>
+                        <input
+                          type="text"
+                          name="country"
+                          defaultValue={profileData?.country || ""}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          State
+                        </label>
+                        <input
+                          type="text"
+                          name="state"
+                          defaultValue={profileData?.state || ""}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Job + Income */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Job
+                        </label>
+                        <input
+                          type="text"
+                          name="job"
+                          defaultValue={profileData?.job || ""}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Monthly Income
+                        </label>
+                        <input
+                          type="number"
+                          name="monthly_income"
+                          defaultValue={profileData?.monthly_income || ""}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Interests */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Interests
                       </label>
                       <textarea
                         name="interests"
-                        id="interests"
-                        value={formData.interests}
-                        onChange={handleChange}
-                        placeholder="Interests"
-                        className="border rounded p-2 border-gray-300 bg-white col-span-2"
-                        disabled={readOnly}
-                      />
+                        rows="3"
+                        defaultValue={profileData?.interests || ""}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                      ></textarea>
                     </div>
 
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="bio"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                    {/* Bio */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Bio
                       </label>
                       <textarea
                         name="bio"
-                        id="bio"
-                        value={formData.bio}
-                        onChange={handleChange}
-                        placeholder="Bio"
-                        className="border rounded p-2 border-gray-300 bg-white col-span-2"
-                        disabled={readOnly}
-                      />
+                        defaultValue={profileData?.bio || ""}
+                        rows="3"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                      ></textarea>
                     </div>
                   </div>
-                </section>
+                </div>
 
-                {/* Retirement Planning */}
-                <section
-                  ref={retirementRef}
-                  id="retirement"
-                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
-                >
-                  <div className="flex items-center gap-3 my-5">
-                    <hr className="flex-grow border-gray-300" />
-                    <h3 className="text-xl font-semibold whitespace-nowrap">
-                      Retirement Planning
-                    </h3>
-                    <hr className="flex-grow border-gray-300" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="retirement_planning_age"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
+                {/* Retirement Planning Section */}
+                <div className="pt-6 border-t border-gray-200">
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                    Retirement Planning
+                  </h2>
+
+                  <div className="space-y-6">
+                    {/* Retirement Age */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Retirement Planning Age
                       </label>
                       <input
                         type="number"
-                        id="retirement_planning_age"
-                        name="retirement_planning_age"
-                        value={formData.retirement_planning_age}
-                        onChange={handleChange}
-                        placeholder="Planned Retirement Age"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
+                        name="retirement_age"
+                        defaultValue={
+                          profileData?.retirement_planning_age || ""
+                        }
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                       />
                     </div>
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="current_savings"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Current Savings
-                      </label>
-                      <input
-                        id="current_savings"
-                        type="number"
-                        name="current_savings"
-                        value={formData.current_savings}
-                        onChange={handleChange}
-                        placeholder="Current Savings"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="expected_savings_at_retirement"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Expected Savings at Retirement
-                      </label>
-                      <input
-                        id="expected_savings_at_retirement"
-                        type="number"
-                        name="expected_savings_at_retirement"
-                        value={formData.expected_savings_at_retirement}
-                        onChange={handleChange}
-                        placeholder="Expected Savings at Retirement"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
-                    </div>
-                  </div>
-                </section>
 
-                {/* Post-Retirement Lifestyle */}
-                <section
-                  ref={lifestyleRef}
-                  id="lifestyle"
-                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
-                >
-                  <div className="flex items-center gap-3 my-5">
-                    <hr className="flex-grow border-gray-300" />
-                    <h3 className="text-xl font-semibold whitespace-nowrap">
-                      Post Retirement Lifestyle
-                    </h3>
-                    <hr className="flex-grow border-gray-300" />
-                  </div>
+                    {/* Current Assets */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Assets (max 5)
+                      </label>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {POST_RETIREMENT_CHOICES.map((option) => (
-                      <label key={option} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          name="post_retirement_options"
-                          value={option}
-                          checked={formData.post_retirement_options.includes(
-                            option
+                      {assets.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 mb-3"
+                        >
+                          <select
+                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                            value={item.type}
+                            onChange={(e) => updateAsset(index, e.target.value)}
+                          >
+                            <option value="">Select Asset</option>
+                            {assetTypes
+                              .filter(
+                                (type) =>
+                                  !usedAssetTypes.includes(type) ||
+                                  type === item.type
+                              )
+                              .map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
+                          </select>
+
+                          {index > 0 && (
+                            <button
+                              type="button"
+                              className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                              onClick={() => removeAsset(index)}
+                            >
+                              ✕
+                            </button>
                           )}
-                          onChange={handleChange}
-                          disabled={readOnly}
-                        />
-                        {option}
-                      </label>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
 
-                  <div className="flex flex-col mt-3">
-                    <label
-                      htmlFor="retirement_location_preference"
-                      className="text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Post Retirement Location Preferences
-                    </label>
-                    <input
-                      type="text"
-                      id="retirement_location_preference"
-                      name="retirement_location_preference"
-                      value={formData.retirement_location_preference}
-                      onChange={handleChange}
-                      placeholder="Preferred Retirement Location"
-                      className="border rounded p-2 border-gray-300 bg-white w-full"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </section>
-
-                {/* Dreams Section */}
-                <section
-                  ref={dreamsRef}
-                  id="dreams"
-                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
-                >
-                  <div className="flex items-center gap-3 my-5">
-                    <hr className="flex-grow border-gray-300" />
-                    <h3 className="text-xl font-semibold whitespace-nowrap">
-                      Dreams
-                    </h3>
-                    <hr className="flex-grow border-gray-300" />
-                  </div>
-
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="dream_type"
-                      className="text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Dream Type
-                    </label>
-                    <select
-                      id="dream_type"
-                      name="dream_type"
-                      value={formData.dream_type}
-                      onChange={handleChange}
-                      className="border rounded p-2 border-gray-300 bg-white mb-3 w-full"
-                      disabled={readOnly}
-                    >
-                      <option value="">Select Dream Type</option>
-                      <option value="Pre Retirement">Pre Retirement</option>
-                      <option value="Post Retirement">Post Retirement</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="top_dream_1"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Dream 1
-                      </label>
-                      <input
-                        id="top_dream_1"
-                        type="text"
-                        name="top_dream_1"
-                        value={formData.top_dream_1}
-                        onChange={handleChange}
-                        placeholder="Top Dream 1"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
+                      {assets.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={addAsset}
+                          className="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          + Add Asset
+                        </button>
+                      )}
                     </div>
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="top_dream_2"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Dream 2
+
+                    {/* Post Retirement Plans */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Post-Retirement Life Plans
+                      </label>
+                      <textarea
+                        name="post_life_plans"
+                        defaultValue={
+                          profileData?.post_retirement_life_plans || ""
+                        }
+                        rows="3"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                      ></textarea>
+                    </div>
+
+                    {/* Location Preference */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Post-Retirement Location Preferences
                       </label>
                       <input
                         type="text"
-                        name="top_dream_2"
-                        value={formData.top_dream_2}
-                        onChange={handleChange}
-                        placeholder="Dream 2"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
+                        name="retirement_location"
+                        defaultValue={
+                          profileData?.post_retirement_location_preferences ||
+                          ""
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                       />
                     </div>
-                    <div className="flex flex-col">
-                      <label
-                        htmlFor="dream_3"
-                        className="text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Dream 3
-                      </label>
-                      <input
-                        type="text"
-                        name="top_dream_3"
-                        value={formData.top_dream_3}
-                        onChange={handleChange}
-                        placeholder="Dream 3"
-                        className="border rounded p-2 border-gray-300 bg-white"
-                        disabled={readOnly}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col mt-3">
-                    <label
-                      htmlFor="dream_description"
-                      className="text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Description About Dream
-                    </label>
-                    <textarea
-                      name="dream_description"
-                      value={formData.dream_description}
-                      onChange={handleChange}
-                      placeholder="Description"
-                      className="border rounded p-2 border-gray-300 bg-white w-full"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div className="flex flex-col mt-3">
-                    <label
-                      htmlFor="initial_plan"
-                      className="text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Plans About Dream
-                    </label>
-                    <textarea
-                      name="initial_plan"
-                      value={formData.initial_plan}
-                      onChange={handleChange}
-                      placeholder="Plans"
-                      className="border rounded p-2 border-gray-300 bg-white w-full "
-                      disabled={readOnly}
-                    />
-                  </div>
-                </section>
 
-                {/* Single Save Button */}
-                <div className="pt-6 pb-12">
+                    {/* Dreams */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Describe Your Dreams
+                      </label>
+                      <textarea
+                        name="dreams"
+                        defaultValue={profileData?.dreams || ""}
+                        rows="3"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-6">
                   <button
-                    type="submit"
-                    disabled={loading || readOnly}
-                    className={`w-full py-3 rounded-lg font-semibold text-white ${
-                      loading || readOnly
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700"
-                    }`}
+                    type="button"
+                    onClick={handleSubmit}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
-                    {loading
-                      ? "Saving..."
-                      : readOnly
-                      ? "Profile Saved"
-                      : "Save Profile"}
+                    Save Profile
                   </button>
                 </div>
-              </form>
-            </main>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Alert */}
       <CustomAlert
         message={alert.message}
         type={alert.type}
@@ -881,3 +785,5 @@ export default function ProfileDashboardMerged() {
     </div>
   );
 }
+
+export default ProfileSetupForm;

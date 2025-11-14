@@ -41,9 +41,7 @@ function Header() {
 
     const fetchProfileStatus = async () => {
       try {
-        const res = await axiosInstance.get("api/v1/user/profile-setup/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const res = await axiosInstance.get("api/v1/user/profile-setup/");
         setHasProfile(!!res.data.profile_exists);
       } catch {
         setHasProfile(false);
@@ -67,9 +65,7 @@ function Header() {
 
     const fetchAdvisorStatus = async () => {
       try {
-        const res = await axiosInstance.get("api/v1/user/become-advisor/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const res = await axiosInstance.get("api/v1/user/become-advisor/");
         setAdvisorRequested(!!res.data.requested);
       } catch {
         setAdvisorRequested(false);
@@ -287,7 +283,7 @@ function Header() {
             {user ? (
               <div className="flex items-center gap-1">
                 <Link
-                  href={hasProfile ? "/user-dashboard" : "/profile-setup"}
+                  href="/profile-setup"
                   className="px-2 py-1 bg-white shadow-xl rounded-lg flex hover:bg-gray-50"
                 >
                   <div className="w-9 h-9 flex items-center justify-center rounded-lg border overflow-hidden border-gray-100 bg-white font-bold text-xl select-none z-50 text-black">
@@ -306,9 +302,9 @@ function Header() {
 
                   <div className="ml-2">
                     <p className="text-black text-sm font-medium">
-                      {user.name || user.username}
+                      {user.name || user.username || "Guest"}
                     </p>
-                    <p className="text-gray-500 text-xs">{userRole}</p>
+                    <p className="text-gray-500 text-xs">{userRole || "User"}</p>
                   </div>
                 </Link>
               </div>

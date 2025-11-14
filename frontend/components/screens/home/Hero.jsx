@@ -17,9 +17,7 @@ function Page() {
     if (accessToken) {
       // Check profile
       axiosInstance
-        .get("api/v1/user/profile-setup/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        .get("api/v1/user/profile-setup/")
         .then((res) => {
           if (res.status === 200) setHasProfile(true);
         })
@@ -27,9 +25,7 @@ function Page() {
 
       // Check advisor request
       axiosInstance
-        .get("api/v1/user/become-advisor/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        .get("api/v1/user/become-advisor/")
         .then((res) => setAdvisorRequested(res.data.requested))
         .catch(() => setAdvisorRequested(false));
     }
@@ -42,8 +38,6 @@ function Page() {
       router.push("/authentication");
     }
   };
-
-  
 
   return (
     <div className="min-h-screen bg1">

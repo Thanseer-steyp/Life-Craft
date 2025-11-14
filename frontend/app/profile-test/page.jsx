@@ -1,351 +1,855 @@
 "use client";
-import { useState, useEffect } from "react";
-import axiosInstance from "@/components/config/axiosInstance";
 
-export default function ProfileSetupForm() {
-  const [profileExists, setProfileExists] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
+import React, { useEffect, useRef, useState } from "react";
+import { User, FileText, Settings, Calendar } from "lucide-react";
+import { useRouter } from "next/navigation";
+import axiosInstance from "@/components/config/axiosInstance";
+import CustomAlert from "@/components/includes/CustomAlert";
+
+export default function ProfileDashboardMerged() {
+  const router = useRouter();
+
+  // --- original form state (kept as-is) ---
+  const [formData, setFormData] = useState({
+    dob: "",
+    gender: "",
+    marital_status: "",
+    phone_number: "",
+    country: "India",
+    state: "",
+    profile_picture: null,
+    interests: "",
+    job: "",
+    monthly_income: "",
+    bio: "",
+    retirement_planning_age: "",
+    current_savings: "",
+    expected_savings_at_retirement: "",
+    post_retirement_options: [],
+    retirement_location_preference: "",
+    dream_type: "",
+    top_dream_1: "",
+    top_dream_2: "",
+    top_dream_3: "",
+    top_dream_priorities: "",
+    initial_plan: "",
+    dream_description: "",
+  });
+
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState(null);
+  const [userFullName, setUserFullName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("");
+  const [alert, setAlert] = useState({ message: "", type: "" });
+
+  // NEW: read-only mode after successful save
+  const [readOnly, setReadOnly] = useState(true);
+
+  // section refs for smooth scrolling
+  const personalRef = useRef(null);
+  const retirementRef = useRef(null);
+  const lifestyleRef = useRef(null);
+  const dreamsRef = useRef(null);
 
   useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const res = await axiosInstance.get("/api/v1/user/profile-setup/");
-        setProfileExists(res.data.profile_exists);
+    const access = localStorage.getItem("access");
+    setToken(access);
 
-        if (res.data.profile_exists) {
-          setProfileData(res.data.data);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+    if (access) {
+      axiosInstance
+        .get("api/v1/user/user-dashboard/")
+        .then((res) => {
+          setUserFullName(res.data.name || "");
+          setUserEmail(res.data.email || "");
+          setUserName(res.data.username || "");
+
+          // If backend returns existing profile data, populate formData (safe-guard)
+          const profile = res.data.profile || null;
+          if (profile) {
+            // Map backend fields if available — only set if value exists
+            setFormData((prev) => ({
+              ...prev,
+              dob: profile.dob || prev.dob,
+              gender: profile.gender || prev.gender,
+              marital_status: profile.marital_status || prev.marital_status,
+              phone_number: profile.phone_number || prev.phone_number,
+              country: profile.country || prev.country,
+              state: profile.state || prev.state,
+              // NOTE: profile_picture is a URL from backend; keep preview and don't set File object
+              interests: profile.interests || prev.interests,
+              job: profile.job || prev.job,
+              monthly_income: profile.monthly_income || prev.monthly_income,
+              bio: profile.bio || prev.bio,
+              retirement_planning_age:
+                profile.retirement_planning_age || prev.retirement_planning_age,
+              current_savings: profile.current_savings || prev.current_savings,
+              expected_savings_at_retirement:
+                profile.expected_savings_at_retirement ||
+                prev.expected_savings_at_retirement,
+              post_retirement_options:
+                profile.post_retirement_options || prev.post_retirement_options,
+              retirement_location_preference:
+                profile.retirement_location_preference ||
+                prev.retirement_location_preference,
+              dream_type: profile.dream_type || prev.dream_type,
+              top_dream_1: profile.top_dream_1 || prev.top_dream_1,
+              top_dream_2: profile.top_dream_2 || prev.top_dream_2,
+              top_dream_3: profile.top_dream_3 || prev.top_dream_3,
+              dream_description:
+                profile.dream_description || prev.dream_description,
+              initial_plan: profile.initial_plan || prev.initial_plan,
+            }));
+
+            if (profile.profile_picture) {
+              let imageUrl = profile.profile_picture;
+              // ✅ ensure it's an absolute URL
+              if (!/^https?:\/\//i.test(imageUrl)) {
+                imageUrl = `${axiosInstance.defaults.baseURL.replace(
+                  /\/$/,
+                  ""
+                )}${imageUrl}`;
+              }
+              setPreview(imageUrl);
+            }
+
+            // If profile has been completed previously, lock the form
+            if (profile.is_completed) {
+              setReadOnly(true);
+            }
+          }
+        })
+        .catch((err) => console.error(err));
     }
-
-    fetchProfile();
   }, []);
 
-  const [assets, setAssets] = useState([{ type: "" }]);
-  const assetTypes = ["Cash", "Vehicles", "Gold", "House", "Land"];
-
-  const addAsset = () => {
-    if (assets.length < 5) setAssets([...assets, { type: "" }]);
-  };
-
-  const updateAsset = (index, value) => {
-    const updated = [...assets];
-    updated[index].type = value;
-    setAssets(updated);
-  };
-
-  const removeAsset = (index) => {
-    setAssets(assets.filter((_, i) => i !== index));
-  };
-
-  const usedAssetTypes = assets.map((a) => a.type).filter(Boolean);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      dob: e.target.dob.value,
-      gender: e.target.gender.value,
-      marital_status: e.target.marital_status.value,
-      phone_number: e.target.phone.value,
-      country: e.target.country.value,
-      state: e.target.state.value,
-      job: e.target.job.value || null,
-      monthly_income: e.target.monthly_income.value || null,
-      interests: e.target.interests.value || null,
-      bio: e.target.bio.value || null,
-      retirement_planning_age: e.target.retirement_age.value,
-      current_assets: assets.map((a) => a.type),
-      post_retirement_life_plans: e.target.post_life_plans.value || null,
-      post_retirement_location_preferences: e.target.retirement_location.value || null,
-      dreams: e.target.dreams.value || null,
-    };
-
+  const fetchUserProfile = async () => {
     try {
-      const res = await axiosInstance.post("/api/v1/user/profile-setup/", payload);
+      const res = await axiosInstance.get("api/v1/user/user-dashboard/");
+      const profile = res.data.profile || {};
 
-      alert("Profile submitted successfully!");
+      setFormData((prev) => ({
+        ...prev,
+        ...profile,
+      }));
 
-      // 🔥 Switch to details view immediately
-      setProfileExists(true);
-      setProfileData(res.data);
+      if (profile) {
+        setFormData((prev) => ({
+          ...prev,
+          // ...existing field assignments...
+        }));
 
-    } catch (error) {
-      if (error.response?.data?.error === "Profile already created") {
-        alert("You already submitted your profile.");
-      } else {
-        alert("Failed to submit");
+        if (profile.profile_picture) {
+          let imageUrl = profile.profile_picture;
+          if (!/^https?:\/\//i.test(imageUrl)) {
+            imageUrl = `${axiosInstance.defaults.baseURL.replace(
+              /\/$/,
+              ""
+            )}${imageUrl}`;
+          }
+          setPreview(imageUrl);
+        }
+
+        const hasAnyData = Object.values(profile || {}).some(
+          (v) => v && v !== ""
+        );
+        setReadOnly(hasAnyData); // ✅ lock if profile already filled
       }
+    } catch (err) {
+      console.error("Failed to fetch updated profile:", err);
     }
   };
 
-  // 🟡 Loading state
-  if (loading) return <p className="text-center p-6">Loading...</p>;
+  // POST_RETIREMENT_CHOICES kept same
+  const POST_RETIREMENT_CHOICES = [
+    "Travel",
+    "Hobbies",
+    "Family Together",
+    "Social Work",
+    "Garage/Car Projects",
+    "Luxury Life",
+  ];
+
+  const handleChange = (e) => {
+    const { name, value, type, checked, files } = e.target;
+    if (readOnly) return; // prevent changes when read-only
+
+    if (type === "checkbox" && name === "post_retirement_options") {
+      let updated = [...formData.post_retirement_options];
+      if (checked) updated.push(value);
+      else updated = updated.filter((item) => item !== value);
+      setFormData({ ...formData, post_retirement_options: updated });
+    } else if (type === "file") {
+      setFormData({ ...formData, profile_picture: files[0] });
+      setPreview(URL.createObjectURL(files[0]));
+    } else if (type === "checkbox") {
+      setFormData({ ...formData, [name]: checked });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  // --- handleSubmit: preserved logic, but sets readOnly on success ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!token) {
+      setAlert({
+        message: "You must be logged in to submit your profile.",
+        type: "warning",
+      });
+      return;
+    }
+
+    setLoading(true);
+    setAlert({ message: "", type: "" });
+
+    try {
+      const data = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (Array.isArray(value)) value.forEach((v) => data.append(key, v));
+        else if (value !== null && typeof value !== "undefined")
+          data.append(key, value);
+      });
+
+      await axiosInstance.post("api/v1/user/profile-setup/", data);
+
+      // ✅ Re-fetch updated profile to get new image URL
+      await fetchUserProfile();
+
+      setAlert({ message: "Profile created successfully!", type: "success" });
+      setReadOnly(true);
+      window.dispatchEvent(new Event("profile-updated"));
+    } catch (err) {
+      console.error(err);
+      setAlert({
+        message: "Failed to save profile. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Smooth scroll handler
+  const scrollTo = (refName) => {
+    const map = {
+      personal: personalRef,
+      retirement: retirementRef,
+      lifestyle: lifestyleRef,
+      dreams: dreamsRef,
+    };
+    const ref = map[refName];
+    if (ref && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // avatar initial
+  const avatarInitial = userFullName
+    ? userFullName.trim().charAt(0).toUpperCase()
+    : userName?.charAt(0)?.toUpperCase() || "U";
+
+  return (
+    <div className="bg-gray-50 p-8 text-black min-h-[calc(100vh - 68px)]">
+      <div className="w-4/5 mx-auto">
+        <div className="bg-white rounded-xl shadow-sm ">
+          <div className="flex">
+            {/* Sidebar */}
+            <aside className="w-1/4 border-r border-gray-200 p-6">
+              <div className="text-center mb-8">
+                <div className="relative w-20 h-20 mx-auto mb-3">
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden border border-gray-200"
+                    style={{
+                      background: preview
+                        ? "transparent"
+                        : "linear-gradient(135deg,#60a5fa,#a78bfa)",
+                    }}
+                  >
+                    {preview ? (
+                      <img
+                        src={preview}
+                        alt="avatar"
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white text-2xl font-semibold">
+                        {avatarInitial}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hidden file input */}
+                  {!readOnly && (
+                    <>
+                      <input
+                        id="profile_upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              profile_picture: file,
+                            }));
+                            setPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="profile_upload"
+                        className="absolute bottom-0 right-0 bg-gray-600 p-1.5 rounded-full text-white cursor-pointer hover:bg-blue-700"
+                        title="Upload new picture"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="lucide lucide-switch-camera-icon lucide-switch-camera"
+                        >
+                          <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+                          <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" />
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="m18 22-3-3 3-3" />
+                          <path d="m6 2 3 3-3 3" />
+                        </svg>
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                <h2 className="font-semibold text-gray-900">
+                  {userFullName || userName || "User"}
+                </h2>
+                <p className="text-sm text-gray-500">{userEmail || "—"}</p>
+              </div>
 
 
-  // 🟢 If profile exists → show details instead of form
-  if (profileExists && profileData) {
-    return (
-      <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded-xl text-black">
-        <h1 className="text-2xl font-bold mb-6">Your Profile</h1>
+              {/* Edit toggle shown when readOnly is true */}
+              {readOnly && (
+                <div className="mt-6">
+                  <button
+                    onClick={() => setReadOnly(false)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
+              )}
+            </aside>
 
-        <div className="space-y-3">
-          <p><strong>Name:</strong> {profileData.full_name}</p>
-          <p><strong>Email:</strong> {profileData.email}</p>
-          <p><strong>DOB:</strong> {profileData.dob}</p>
-          <p><strong>Gender:</strong> {profileData.gender}</p>
-          <p><strong>Marital Status:</strong> {profileData.marital_status}</p>
-          <p><strong>Phone:</strong> {profileData.phone_number}</p>
-          <p><strong>Country:</strong> {profileData.country}</p>
-          <p><strong>State:</strong> {profileData.state}</p>
-          <p><strong>Job:</strong> {profileData.job || "—"}</p>
-          <p><strong>Monthly Income:</strong> {profileData.monthly_income || "—"}</p>
-          <p><strong>Interests:</strong> {profileData.interests || "—"}</p>
-          <p><strong>Bio:</strong> {profileData.bio || "—"}</p>
-          <p><strong>Retirement Age:</strong> {profileData.retirement_planning_age}</p>
+            {/* Main Content Area */}
+            <main
+              className="flex-1 p-8 overflow-y-auto"
+            >
+              <form onSubmit={handleSubmit} className="space-y-8 pr-4">
+                {/* Account Info (read-only) */}
+                <section className="mb-6 p-4 bg-gray-50 shadow-xl rounded-xl">
+                  <h3 className="text-3xl font-bold mb-2 text-center">
+                    Complete Your Profile
+                  </h3>
+                  <p className="text-sm text-gray-500 text-center">
+                    Fill the details below and click Save Profile
+                  </p>
+                </section>
 
-          <p><strong>Assets:</strong> 
-            {profileData.current_assets?.length ? 
-              profileData.current_assets.join(", ") : "—"}
-          </p>
+                {/* Personal Information */}
+                <section
+                  ref={personalRef}
+                  id="personal"
+                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
+                >
+                  <div className="flex items-center gap-3 my-5">
+                    <hr className="flex-grow border-gray-300" />
+                    <h3 className="text-xl font-semibold whitespace-nowrap">
+                      Personal Information
+                    </h3>
+                    <hr className="flex-grow border-gray-300" />
+                  </div>
 
-          <p><strong>Post Retirement Plans:</strong> {profileData.post_retirement_life_plans || "—"}</p>
-          <p><strong>Preferred Retirement Location:</strong> {profileData.post_retirement_location_preferences || "—"}</p>
-          <p><strong>Dreams:</strong> {profileData.dreams || "—"}</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="dob"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Date of Birth
+                      </label>
+                      <input
+                        id="dob"
+                        type="date"
+                        name="dob"
+                        value={formData.dob}
+                        onChange={handleChange}
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="gender"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Gender
+                      </label>
+                      <select
+                        id="gender"
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleChange}
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="men">Male</option>
+                        <option value="women">Female</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="marital_status"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Maritial Status
+                      </label>
+                      <select
+                        id="marital_status"
+                        name="marital_status"
+                        value={formData.marital_status}
+                        onChange={handleChange}
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      >
+                        <option value="">Select Marital Status</option>
+                        <option value="single">Single</option>
+                        <option value="married">Married</option>
+                        <option value="divorced">Divorced</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="phone_number"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Phone Number
+                      </label>
+                      <input
+                        type="text"
+                        id="phone_number"
+                        name="phone_number"
+                        value={formData.phone_number}
+                        onChange={handleChange}
+                        placeholder="Phone Number"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="country"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Country
+                      </label>
+                      <select
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      >
+                        <option value="India">India</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="state"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        State
+                      </label>
+                      <select
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleChange}
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      >
+                        <option value="">Select State</option>
+                        <option value="Kerala">Kerala</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Karnataka">Karnataka</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="job"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Job
+                      </label>
+                      <input
+                        id="job"
+                        type="text"
+                        name="job"
+                        value={formData.job}
+                        onChange={handleChange}
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="monthly_income"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Monthly Income
+                      </label>
+                      <input
+                        id="monthly_income"
+                        type="number"
+                        name="monthly_income"
+                        value={formData.monthly_income}
+                        onChange={handleChange}
+                        placeholder="Monthly Income"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="interests"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Interests
+                      </label>
+                      <textarea
+                        name="interests"
+                        id="interests"
+                        value={formData.interests}
+                        onChange={handleChange}
+                        placeholder="Interests"
+                        className="border rounded p-2 border-gray-300 bg-white col-span-2"
+                        disabled={readOnly}
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="bio"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Bio
+                      </label>
+                      <textarea
+                        name="bio"
+                        id="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        placeholder="Bio"
+                        className="border rounded p-2 border-gray-300 bg-white col-span-2"
+                        disabled={readOnly}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Retirement Planning */}
+                <section
+                  ref={retirementRef}
+                  id="retirement"
+                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
+                >
+                  <div className="flex items-center gap-3 my-5">
+                    <hr className="flex-grow border-gray-300" />
+                    <h3 className="text-xl font-semibold whitespace-nowrap">
+                      Retirement Planning
+                    </h3>
+                    <hr className="flex-grow border-gray-300" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="retirement_planning_age"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Retirement Planning Age
+                      </label>
+                      <input
+                        type="number"
+                        id="retirement_planning_age"
+                        name="retirement_planning_age"
+                        value={formData.retirement_planning_age}
+                        onChange={handleChange}
+                        placeholder="Planned Retirement Age"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="current_savings"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Current Savings
+                      </label>
+                      <input
+                        id="current_savings"
+                        type="number"
+                        name="current_savings"
+                        value={formData.current_savings}
+                        onChange={handleChange}
+                        placeholder="Current Savings"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="expected_savings_at_retirement"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Expected Savings at Retirement
+                      </label>
+                      <input
+                        id="expected_savings_at_retirement"
+                        type="number"
+                        name="expected_savings_at_retirement"
+                        value={formData.expected_savings_at_retirement}
+                        onChange={handleChange}
+                        placeholder="Expected Savings at Retirement"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Post-Retirement Lifestyle */}
+                <section
+                  ref={lifestyleRef}
+                  id="lifestyle"
+                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
+                >
+                  <div className="flex items-center gap-3 my-5">
+                    <hr className="flex-grow border-gray-300" />
+                    <h3 className="text-xl font-semibold whitespace-nowrap">
+                      Post Retirement Lifestyle
+                    </h3>
+                    <hr className="flex-grow border-gray-300" />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {POST_RETIREMENT_CHOICES.map((option) => (
+                      <label key={option} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          name="post_retirement_options"
+                          value={option}
+                          checked={formData.post_retirement_options.includes(
+                            option
+                          )}
+                          onChange={handleChange}
+                          disabled={readOnly}
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col mt-3">
+                    <label
+                      htmlFor="retirement_location_preference"
+                      className="text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Post Retirement Location Preferences
+                    </label>
+                    <input
+                      type="text"
+                      id="retirement_location_preference"
+                      name="retirement_location_preference"
+                      value={formData.retirement_location_preference}
+                      onChange={handleChange}
+                      placeholder="Preferred Retirement Location"
+                      className="border rounded p-2 border-gray-300 bg-white w-full"
+                      disabled={readOnly}
+                    />
+                  </div>
+                </section>
+
+                {/* Dreams Section */}
+                <section
+                  ref={dreamsRef}
+                  id="dreams"
+                  className="p-4 bg-gray-50 shadow-xl rounded-xl"
+                >
+                  <div className="flex items-center gap-3 my-5">
+                    <hr className="flex-grow border-gray-300" />
+                    <h3 className="text-xl font-semibold whitespace-nowrap">
+                      Dreams
+                    </h3>
+                    <hr className="flex-grow border-gray-300" />
+                  </div>
+
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="dream_type"
+                      className="text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Dream Type
+                    </label>
+                    <select
+                      id="dream_type"
+                      name="dream_type"
+                      value={formData.dream_type}
+                      onChange={handleChange}
+                      className="border rounded p-2 border-gray-300 bg-white mb-3 w-full"
+                      disabled={readOnly}
+                    >
+                      <option value="">Select Dream Type</option>
+                      <option value="Pre Retirement">Pre Retirement</option>
+                      <option value="Post Retirement">Post Retirement</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="top_dream_1"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Dream 1
+                      </label>
+                      <input
+                        id="top_dream_1"
+                        type="text"
+                        name="top_dream_1"
+                        value={formData.top_dream_1}
+                        onChange={handleChange}
+                        placeholder="Top Dream 1"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="top_dream_2"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Dream 2
+                      </label>
+                      <input
+                        type="text"
+                        name="top_dream_2"
+                        value={formData.top_dream_2}
+                        onChange={handleChange}
+                        placeholder="Dream 2"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="dream_3"
+                        className="text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Dream 3
+                      </label>
+                      <input
+                        type="text"
+                        name="top_dream_3"
+                        value={formData.top_dream_3}
+                        onChange={handleChange}
+                        placeholder="Dream 3"
+                        className="border rounded p-2 border-gray-300 bg-white"
+                        disabled={readOnly}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col mt-3">
+                    <label
+                      htmlFor="dream_description"
+                      className="text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Description About Dream
+                    </label>
+                    <textarea
+                      name="dream_description"
+                      value={formData.dream_description}
+                      onChange={handleChange}
+                      placeholder="Description"
+                      className="border rounded p-2 border-gray-300 bg-white w-full"
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <div className="flex flex-col mt-3">
+                    <label
+                      htmlFor="initial_plan"
+                      className="text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Plans About Dream
+                    </label>
+                    <textarea
+                      name="initial_plan"
+                      value={formData.initial_plan}
+                      onChange={handleChange}
+                      placeholder="Plans"
+                      className="border rounded p-2 border-gray-300 bg-white w-full "
+                      disabled={readOnly}
+                    />
+                  </div>
+                </section>
+
+                {/* Single Save Button */}
+                <div className="pt-6 pb-12">
+                  <button
+                    type="submit"
+                    disabled={loading || readOnly}
+                    className={`w-full py-3 rounded-lg font-semibold text-white ${
+                      loading || readOnly
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                  >
+                    {loading
+                      ? "Saving..."
+                      : readOnly
+                      ? "Profile Saved"
+                      : "Save Profile"}
+                  </button>
+                </div>
+              </form>
+            </main>
+          </div>
         </div>
       </div>
-    );
-  }
 
-  // 🟣 If no profile → show the form (your existing form)
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-        {/* DOB + Gender */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-semibold">Date of Birth</label>
-            <input
-              type="date"
-              name="dob"
-              required
-              className="w-full border rounded p-2 text-black"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold">Gender</label>
-            <select
-              name="gender"
-              required
-              className="w-full border rounded p-2 text-black"
-            >
-              <option value="">Select</option>
-              <option>Male</option>
-              <option>Female</option>
-              <option>Other</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Marital + Phone */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-semibold">Marital Status</label>
-            <select
-              name="marital_status"
-              required
-              className="w-full border rounded p-2 text-black"
-            >
-              <option value="">Select</option>
-              <option>Single</option>
-              <option>Married</option>
-              <option>Divorced</option>
-              <option>Widowed</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold">Phone Number</label>
-            <input
-              type="text"
-              name="phone"
-              required
-              className="w-full border rounded p-2 text-black"
-            />
-          </div>
-        </div>
-
-        {/* Country + State */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-semibold">Country</label>
-            <input
-              type="text"
-              name="country"
-              required
-              className="w-full border rounded p-2 text-black"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold">State</label>
-            <input
-              type="text"
-              name="state"
-              required
-              className="w-full border rounded p-2 text-black"
-            />
-          </div>
-        </div>
-
-        {/* Job + Income */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-semibold">Job (optional)</label>
-            <input
-              type="text"
-              name="job"
-              className="w-full border rounded p-2 text-black"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold">
-              Monthly Income (optional)
-            </label>
-            <input
-              type="number"
-              name="monthly_income"
-              className="w-full border rounded p-2 text-black"
-            />
-          </div>
-        </div>
-
-        {/* Interests */}
-        <div>
-          <label className="block mb-1 font-semibold">
-            Interests (optional)
-          </label>
-          <textarea
-            name="interests"
-            className="w-full border rounded p-2 text-black"
-          ></textarea>
-        </div>
-
-        {/* Bio */}
-        <div>
-          <label className="block mb-1 font-semibold">Bio (optional)</label>
-          <textarea
-            name="bio"
-            className="w-full border rounded p-2 text-black"
-          ></textarea>
-        </div>
-
-        {/* Retirement Age */}
-        <div>
-          <label className="block mb-1 font-semibold">
-            Retirement Planning Age
-          </label>
-          <input
-            type="number"
-            name="retirement_age"
-            required
-            className="w-full border rounded p-2 text-black"
-          />
-        </div>
-
-        {/* Current Assets */}
-        <div>
-          <label className="block mb-2 font-semibold">
-            Current Assets (max 5)
-          </label>
-
-          {assets.map((item, index) => (
-            <div key={index} className="flex items-center gap-3 mb-3">
-              <select
-                className="border rounded p-2 w-full text-black"
-                value={item.type}
-                onChange={(e) => updateAsset(index, e.target.value)}
-              >
-                <option value="">Select Asset</option>
-                {assetTypes
-                  .filter(
-                    (type) =>
-                      !usedAssetTypes.includes(type) || type === item.type
-                  )
-                  .map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-              </select>
-
-              {index > 0 && (
-                <button
-                  type="button"
-                  className="font-bold text-black"
-                  onClick={() => removeAsset(index)}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-
-          {assets.length < 5 && (
-            <button
-              type="button"
-              onClick={addAsset}
-              className="mt-2 px-3 py-1 border rounded text-black"
-            >
-              + Add Asset
-            </button>
-          )}
-        </div>
-
-        {/* Post Retirement Plans */}
-        <div>
-          <label className="block mb-1 font-semibold">
-            Post-Retirement Life Plans (optional)
-          </label>
-          <textarea
-            name="post_life_plans"
-            className="w-full border rounded p-2 text-black"
-          ></textarea>
-        </div>
-
-        {/* Location Preference */}
-        <div>
-          <label className="block mb-1 font-semibold">
-            Post-Retirement Location Preferences (optional)
-          </label>
-          <input
-            type="text"
-            name="retirement_location"
-            className="w-full border rounded p-2 text-black"
-          />
-        </div>
-
-        {/* Dreams */}
-        <div>
-          <label className="block mb-1 font-semibold">
-            Describe Your Dreams (optional)
-          </label>
-          <textarea
-            name="dreams"
-            className="w-full border rounded p-2 text-black"
-          ></textarea>
-        </div>
-
-        {/* Submit */}
-        <button className="px-6 py-3 border rounded-lg font-semibold w-full text-black">
-          Submit Profile
-        </button>
-      </form>
+      {/* Alert */}
+      <CustomAlert
+        message={alert.message}
+        type={alert.type}
+        onClose={() => setAlert({ message: "", type: "" })}
+      />
+    </div>
   );
 }
+

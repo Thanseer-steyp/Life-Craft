@@ -5,25 +5,21 @@ from advisor.models import Advisor
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(upload_to="profile_pics/", null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=20, null=True, blank=True)
     marital_status = models.CharField(max_length=20, null=True, blank=True)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
     state = models.CharField(max_length=100, null=True, blank=True)
-
     job = models.CharField(max_length=150, null=True, blank=True)
     monthly_income = models.IntegerField(null=True, blank=True)
-
     interests = models.TextField(null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
-
     retirement_planning_age = models.IntegerField(null=True, blank=True)
     current_assets = models.JSONField(default=list, blank=True)
-
     post_retirement_life_plans = models.TextField(null=True, blank=True)
     post_retirement_location_preferences = models.CharField(max_length=255, null=True, blank=True)
-
     dreams = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

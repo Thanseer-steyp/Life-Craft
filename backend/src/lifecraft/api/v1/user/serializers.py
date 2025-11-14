@@ -2,15 +2,16 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from user.models import Profile,AdvisorRequest,Appointment
 from chatroom.models import ChatRoom, Message
-
-
-
+from datetime import date
 
 
 class ProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+    retirement_time_left = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Profile
@@ -23,6 +24,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "gender",
             "marital_status",
             "phone_number",
+            "age",                           # ← ADD HERE
+            "retirement_time_left",  
             "country",
             "state",
             "job",
@@ -34,8 +37,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             "post_retirement_life_plans",
             "post_retirement_location_preferences",
             "dreams",
+            "profile_picture",
         ]
-        read_only_fields = ["id", "full_name", "username", "email"]
+        read_only_fields = ["id", "full_name", "username", "email","age","retirement_time_left"]
 
     def get_full_name(self, obj):
         user = self.context.get("user")
@@ -54,6 +58,66 @@ class ProfileSerializer(serializers.ModelSerializer):
         if user:
             return user.email
         return None
+
+    def calculate_age_components(self, dob):
+        today = date.today()
+
+        years = today.year - dob.year
+        months = today.month - dob.month
+        days = today.day - dob.day
+
+        if days < 0:
+            # days in previous month
+            prev_month_days = (date(today.year, today.month, 1) - date(today.year if today.month > 1 else today.year - 1,
+                                today.month - 1 if today.month > 1 else 12,
+                                1)).days
+            days += prev_month_days
+            months -= 1
+
+        if months < 0:
+            months += 12
+            years -= 1
+
+        return years, months, days
+
+    def get_age(self, obj):
+        if not obj.dob:
+            return None
+
+        years, months, days = self.calculate_age_components(obj.dob)
+        return f"{years} years {months} months {days} days"
+
+
+    def get_retirement_time_left(self, obj):
+        if not obj.dob or not obj.retirement_planning_age:
+            return None
+
+        # retirement date = dob + retirement_age
+        retirement_year = obj.dob.year + int(obj.retirement_planning_age)
+        retirement_date = date(retirement_year, obj.dob.month, obj.dob.day)
+
+        if retirement_date < date.today():
+            return "Already retired"
+
+        years = retirement_date.year - date.today().year
+        months = retirement_date.month - date.today().month
+        days = retirement_date.day - date.today().day
+
+        if days < 0:
+            prev_month_days = (date(date.today().year, date.today().month, 1) -
+                            date(date.today().year if date.today().month > 1 else date.today().year - 1,
+                                    date.today().month - 1 if date.today().month > 1 else 12,
+                                    1)).days
+            days += prev_month_days
+            months -= 1
+
+        if months < 0:
+            months += 12
+            years -= 1
+
+        return f"{years} years {months} months {days} days"
+
+
 
     
 

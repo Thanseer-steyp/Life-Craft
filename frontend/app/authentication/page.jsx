@@ -113,10 +113,7 @@ function AuthPage() {
         } else {
           // 🔹 Advisor check
           const advisorRes = await axiosInstance.get(
-            "api/v1/advisor/advisors-list/",
-            {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }
+            "api/v1/advisor/advisors-list/"
           );
 
           const isAdvisor = advisorRes.data.some(
@@ -165,7 +162,9 @@ function AuthPage() {
             router.push("/admin-dashboard");
           } else {
             // 🔹 Advisor check
-            const advisorRes = await axiosInstance.get("api/v1/advisor/advisors-list/");
+            const advisorRes = await axiosInstance.get(
+              "api/v1/advisor/advisors-list/"
+            );
 
             const isAdvisor = advisorRes.data.some(
               (adv) => adv.email === formData.email
@@ -192,8 +191,7 @@ function AuthPage() {
   const handleResend = async () => {
     try {
       let url = "";
-      if (!isLogin)
-        url = "api/v1/auth/signup-otp-resend/";
+      if (!isLogin) url = "api/v1/auth/signup-otp-resend/";
       else if (useOTP || resetPassword)
         url = useOTP
           ? "api/v1/auth/login-otp-request/"
