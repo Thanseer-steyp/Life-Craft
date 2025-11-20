@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 
 function AdvisorDashboard() {
   const [activeTab, setActiveTab] = useState("appointments"); // ✅ Tabs
@@ -140,7 +140,6 @@ function AdvisorDashboard() {
 
   const handleLogout = () => {
     localStorage.clear();
-    window.dispatchEvent(new Event("login-status-changed"));
     router.push("/authentication");
   };
 

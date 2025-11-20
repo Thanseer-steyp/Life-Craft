@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 
 function Page() {
   const router = useRouter();

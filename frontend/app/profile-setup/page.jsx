@@ -1,19 +1,64 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 import CustomAlert from "@/components/includes/CustomAlert";
+import { useContext } from "react";
+import { UserContext } from "@/components/config/UserProvider";
+
 
 function ProfileSetupForm() {
   const [profileExists, setProfileExists] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const { userData, setUserData } = useContext(UserContext);
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
   const [editing, setEditing] = useState(false);
   const [alert, setAlert] = useState({ message: "", type: "" });
   const [selectedFile, setSelectedFile] = useState(null);
+  const [activeTab, setActiveTab] = useState("personal");
 
   const formRef = useRef(null);
+
+  const [formData, setFormData] = useState({
+    dob: profileData?.dob || "",
+    gender: profileData?.gender || "",
+    marital_status: profileData?.marital_status || "",
+    phone_number: profileData?.phone_number || "",
+    country: profileData?.country || "",
+    state: profileData?.state || "",
+    job: profileData?.job || "",
+    monthly_income: profileData?.monthly_income || "",
+    interests: profileData?.interests || "",
+    bio: profileData?.bio || "",
+    retirement_planning_age: profileData?.retirement_planning_age || "",
+    post_retirement_life_plans: profileData?.post_retirement_life_plans || "",
+    post_retirement_location_preferences:
+      profileData?.post_retirement_location_preferences || "",
+    dreams: profileData?.dreams || "",
+  });
+
+  useEffect(() => {
+    if (profileData) {
+      setFormData({
+        dob: profileData.dob || "",
+        gender: profileData.gender || "",
+        marital_status: profileData.marital_status || "",
+        phone_number: profileData.phone_number || "",
+        country: profileData.country || "",
+        state: profileData.state || "",
+        job: profileData.job || "",
+        monthly_income: profileData.monthly_income || "",
+        interests: profileData.interests || "",
+        bio: profileData.bio || "",
+        retirement_planning_age: profileData.retirement_planning_age || "",
+        post_retirement_life_plans:
+          profileData.post_retirement_life_plans || "",
+        post_retirement_location_preferences:
+          profileData.post_retirement_location_preferences || "",
+        dreams: profileData.dreams || "",
+      });
+    }
+  }, [profileData]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -30,7 +75,6 @@ function ProfileSetupForm() {
             profile_picture: res.data.data.profile_picture,
           });
         } else {
-          // Profile doesn't exist, use user data from response
           setUserData(res.data.user);
         }
       } catch (error) {
@@ -43,24 +87,52 @@ function ProfileSetupForm() {
     fetchProfile();
   }, []);
 
-  const [assets, setAssets] = useState([{ type: "" }]);
-  const assetTypes = ["Cash", "Vehicles", "Gold", "House", "Land"];
+  const validateStep = () => {
+    if (activeTab === "personal") {
+      const requiredFields = [
+        "dob",
+        "gender",
+        "marital_status",
+        "phone_number",
+        "country",
+        "state",
+      ];
 
-  const addAsset = () => {
-    if (assets.length < 5) setAssets([...assets, { type: "" }]);
+      for (let field of requiredFields) {
+        if (!formData[field]) {
+          setAlert({
+            message: "Please fill all required fields before proceeding.",
+            type: "error",
+          });
+          return false;
+        }
+      }
+    }
+
+    if (activeTab === "retirement") {
+      const requiredFields = ["retirement_planning_age"];
+
+      for (let field of requiredFields) {
+        if (!formData[field]) {
+          setAlert({
+            message: "Please fill all required fields before proceeding.",
+            type: "error",
+          });
+          return false;
+        }
+      }
+    }
+
+    return true;
   };
 
-  const updateAsset = (index, value) => {
-    const updated = [...assets];
-    updated[index].type = value;
-    setAssets(updated);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
-
-  const removeAsset = (index) => {
-    setAssets(assets.filter((_, i) => i !== index));
-  };
-
-  const usedAssetTypes = assets.map((a) => a.type).filter(Boolean);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -73,78 +145,30 @@ function ProfileSetupForm() {
   };
 
   const handleSubmit = async () => {
-    const form = formRef.current;
-    if (!form) return;
-
-    const formData = new FormData();
-
-    // File
+    const fd = new FormData();
 
     if (selectedFile) {
-      formData.append("profile_picture", selectedFile);
+      fd.append("profile_picture", selectedFile);
     }
 
-    // Normal text fields
-    formData.append("dob", form.querySelector('[name="dob"]').value);
-    formData.append("gender", form.querySelector('[name="gender"]').value);
-    formData.append(
-      "marital_status",
-      form.querySelector('[name="marital_status"]').value
-    );
-    formData.append("phone_number", form.querySelector('[name="phone"]').value);
-    formData.append("country", form.querySelector('[name="country"]').value);
-    formData.append("state", form.querySelector('[name="state"]').value);
-    formData.append("job", form.querySelector('[name="job"]').value || "");
-    formData.append(
-      "monthly_income",
-      form.querySelector('[name="monthly_income"]').value || ""
-    );
-    formData.append(
-      "interests",
-      form.querySelector('[name="interests"]').value || ""
-    );
-    formData.append("bio", form.querySelector('[name="bio"]').value || "");
-    formData.append(
-      "retirement_planning_age",
-      form.querySelector('[name="retirement_age"]').value
-    );
-    formData.append(
-      "post_retirement_life_plans",
-      form.querySelector('[name="post_life_plans"]').value || ""
-    );
-    formData.append(
-      "post_retirement_location_preferences",
-      form.querySelector('[name="retirement_location"]').value || ""
-    );
-    formData.append(
-      "dreams",
-      form.querySelector('[name="dreams"]').value || ""
-    );
-
-    // Assets → array
-    assets.forEach((asset, index) => {
-      formData.append(`current_assets[${index}]`, asset.type);
+    Object.entries(formData).forEach(([key, value]) => {
+      fd.append(key, value);
     });
 
     try {
       let res;
 
       if (editing) {
-        // UPDATE existing profile
-        res = await axiosInstance.put("/api/v1/user/profile-setup/", formData);
+        res = await axiosInstance.put("/api/v1/user/profile-setup/", fd);
         setAlert({ message: "Profile edited successfully", type: "success" });
       } else {
-        // CREATE new profile
-        res = await axiosInstance.post("/api/v1/user/profile-setup/", formData);
+        res = await axiosInstance.post("/api/v1/user/profile-setup/", fd);
         setAlert({ message: "Profile created Successfully", type: "success" });
       }
 
-      
-
-      // 🔥 Switch to details view immediately
       setProfileExists(true);
       setProfileData(res.data);
-      setEditing(false); // Go back to details view
+      setEditing(false);
       setUserData({
         username: res.data.username,
         email: res.data.email,
@@ -160,13 +184,11 @@ function ProfileSetupForm() {
     }
   };
 
-  // Get initials for avatar
   const getInitials = (name) => {
     if (!name) return "USER";
     return name.charAt(0).toUpperCase();
   };
 
-  // Get display image
   const getDisplayImage = () => {
     if (previewImage) return previewImage;
 
@@ -179,19 +201,14 @@ function ProfileSetupForm() {
     return null;
   };
 
-  // 🟡 Loading state
   if (loading)
     return <p className="text-center p-6 text-gray-600">Loading...</p>;
 
-  // Main layout with sidebar
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Left Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 p-6 flex flex-col items-center">
         <div className="text-center">
-          {/* Profile Picture / Avatar */}
           <div className="mb-4 relative w-32 h-32 mx-auto">
-            {/* IMAGE OR INITIALS */}
             {getDisplayImage() ? (
               <img
                 src={getDisplayImage()}
@@ -204,7 +221,6 @@ function ProfileSetupForm() {
               </div>
             )}
 
-            {/* CAMERA CHANGE ICON */}
             {(!profileExists || editing) && (
               <>
                 <label
@@ -227,7 +243,6 @@ function ProfileSetupForm() {
                   </svg>
                 </label>
 
-                {/* HIDDEN INPUT */}
                 <input
                   id="profilePicInput"
                   type="file"
@@ -239,20 +254,19 @@ function ProfileSetupForm() {
             )}
           </div>
 
-          {/* User Info */}
           <h2 className="text-xl font-bold text-gray-900 mb-1">
             {userData?.full_name || userData?.username || "User"}
           </h2>
           <p className="text-sm text-gray-500 mb-6">{userData?.email}</p>
 
-          {/* Edit Profile Button - Only show when profile exists */}
           {profileExists && (
             <button
               onClick={() => {
                 if (editing) {
-                  handleSubmit(); // when already editing → save profile
+                  handleSubmit();
                 } else {
-                  setEditing(true); // go into edit mode
+                  setActiveTab("personal");
+                  setEditing(true);
                 }
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
@@ -263,27 +277,23 @@ function ProfileSetupForm() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 p-8">
         {profileExists && profileData && !editing ? (
-          // 🟢 Profile Details View (styled like form)
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
+          <div className="max-w-4xl mx-auto bg-white shadow-sm border border-gray-200 rounded-2xl">
+            <div className="text-center py-6 border-b">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
                 Your Profile
               </h1>
               <p className="text-gray-500">View your profile information</p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-              {/* Personal Information Section */}
+            <div className="p-8">
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">
                   Personal Information
                 </h2>
 
                 <div className="space-y-6">
-                  {/* DOB + Gender */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -315,37 +325,6 @@ function ProfileSetupForm() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Marital + Phone */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Maritial Status
-                      </label>
-                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                        {profileData.marital_status}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Job
-                      </label>
-                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                        {profileData.job || "—"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Monthly Income
-                      </label>
-                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                        {profileData.monthly_income || "—"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Country + State */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -374,36 +353,70 @@ function ProfileSetupForm() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Interests
-                      </label>
-                      <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
-                        {profileData.interests || "—"}
+                  {profileData.job && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Maritial Status
+                        </label>
+                        <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                          {profileData.marital_status}
+                        </div>
                       </div>
-                    </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Job
+                        </label>
+                        <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                          {profileData.job || ""}
+                        </div>
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bio
-                      </label>
-                      <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
-                        {profileData.bio || "—"}
-                      </div>
+                      {profileData.monthly_income && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Monthly Income
+                          </label>
+                          <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                            {profileData.monthly_income || ""}
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-6">
+                    {profileData.interests && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Interests
+                        </label>
+                        <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                          {profileData.interests || ""}
+                        </div>
+                      </div>
+                    )}
+
+                    {profileData.bio && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Bio
+                        </label>
+                        <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                          {profileData.bio || ""}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Retirement Planning Section */}
               <div className="pt-6 border-t border-gray-200">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">
                   Retirement Planning
                 </h2>
 
                 <div className="space-y-6">
-                  {/* Retirement Age */}
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -423,98 +436,84 @@ function ProfileSetupForm() {
                     </div>
                   </div>
 
-                  {/* Current Assets */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Assets
-                    </label>
-                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {profileData.current_assets?.length
-                        ? profileData.current_assets.join(", ")
-                        : "—"}
+                  {profileData.post_retirement_life_plans && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Post-Retirement Life Plans
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                        {profileData.post_retirement_life_plans || ""}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Post Retirement Plans */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Post-Retirement Life Plans
-                    </label>
-                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
-                      {profileData.post_retirement_life_plans || "—"}
+                  {profileData.post_retirement_location_preferences && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Post-Retirement Location Preferences
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                        {profileData.post_retirement_location_preferences || ""}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Location Preference */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Post-Retirement Location Preferences
-                    </label>
-                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {profileData.post_retirement_location_preferences || "—"}
+                  {profileData.dreams && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Describe Your Dreams
+                      </label>
+                      <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
+                        {profileData.dreams || ""}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Dreams */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Describe Your Dreams
-                    </label>
-                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[80px]">
-                      {profileData.dreams || "—"}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          // 🟣 Profile Setup Form
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+            <div className="text-center py-6 border-b">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
                 Complete Your Profile
               </h1>
-              <p className="text-gray-500">
-                Fill the details below and click Save Profile
-              </p>
+              <p className="text-gray-500">Fill the details below</p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div className="bg-white p-8">
               <div ref={formRef} className="space-y-8">
-                {/* Personal Information Section */}
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-                    Personal Information
-                  </h2>
-
+                {activeTab === "personal" && (
                   <div className="space-y-6">
-                    {/* DOB + Gender */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Date of Birth
+                          Date of Birth <span className="text-red-600">*</span>
                         </label>
                         <input
                           type="date"
-                          defaultValue={profileData?.dob || ""}
+                          value={formData.dob}
+                          onChange={handleChange}
                           name="dob"
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Gender
+                          Gender <span className="text-red-600">*</span>
                         </label>
                         <select
                           name="gender"
-                          defaultValue={profileData?.gender || ""}
+                          value={formData.gender}
+                          onChange={handleChange}
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900 bg-white"
                         >
-                          <option value="">Select Gender</option>
+                          <option value="" disabled>
+                            Select Gender
+                          </option>
                           <option>Male</option>
                           <option>Female</option>
                           <option>Other</option>
@@ -522,19 +521,21 @@ function ProfileSetupForm() {
                       </div>
                     </div>
 
-                    {/* Marital + Phone */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Maritial Status
+                          Marital Status <span className="text-red-600">*</span>
                         </label>
                         <select
                           name="marital_status"
-                          defaultValue={profileData?.marital_status || ""}
+                          value={formData.marital_status}
+                          onChange={handleChange}
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900 bg-white"
                         >
-                          <option value="">Select Marital Status</option>
+                          <option value="" disabled>
+                            Select Marital Status
+                          </option>
                           <option>Single</option>
                           <option>Married</option>
                           <option>Divorced</option>
@@ -544,48 +545,49 @@ function ProfileSetupForm() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phone Number
+                          Phone Number <span className="text-red-600">*</span>
                         </label>
                         <input
                           type="text"
-                          name="phone"
-                          defaultValue={profileData?.phone_number || ""}
+                          name="phone_number"
+                          value={formData.phone_number}
+                          onChange={handleChange}
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                         />
                       </div>
                     </div>
 
-                    {/* Country + State */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Country
+                          Country <span className="text-red-600">*</span>
                         </label>
                         <input
                           type="text"
                           name="country"
-                          defaultValue={profileData?.country || ""}
+                          value={formData.country}
+                          onChange={handleChange}
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          State
+                          State <span className="text-red-600">*</span>
                         </label>
                         <input
                           type="text"
                           name="state"
-                          defaultValue={profileData?.state || ""}
+                          value={formData.state}
+                          onChange={handleChange}
                           required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                         />
                       </div>
                     </div>
 
-                    {/* Job + Income */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -594,8 +596,9 @@ function ProfileSetupForm() {
                         <input
                           type="text"
                           name="job"
-                          defaultValue={profileData?.job || ""}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          value={formData.job}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                         />
                       </div>
 
@@ -606,172 +609,174 @@ function ProfileSetupForm() {
                         <input
                           type="number"
                           name="monthly_income"
-                          defaultValue={profileData?.monthly_income || ""}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          value={formData.monthly_income}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                         />
                       </div>
                     </div>
 
-                    {/* Interests */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Interests
                       </label>
-                      <textarea
+                      <input
+                        type="text"
                         name="interests"
                         rows="3"
-                        defaultValue={profileData?.interests || ""}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
-                      ></textarea>
+                        value={formData.interests}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
+                      />
                     </div>
 
-                    {/* Bio */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Bio
                       </label>
                       <textarea
                         name="bio"
-                        defaultValue={profileData?.bio || ""}
                         rows="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900 resize-none"
                       ></textarea>
                     </div>
+                    <p className="text-sm text-center text-gray-500">
+                      We ask you to provide the following information. Please
+                      note that all fields marked with an asterisk (
+                      <span className="text-red-500">*</span>) are required.
+                    </p>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (validateStep()) setActiveTab("retirement");
+                        }}
+                        className="flex items-center gap-1 bg-black/95 hover:bg-black text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                      >
+                        Next
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="lucide lucide-arrow-right-icon lucide-arrow-right"
+                        >
+                          <path d="M5 12h14" />
+                          <path d="m12 5 7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Retirement Planning Section */}
-                <div className="pt-6 border-t border-gray-200">
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-                    Retirement Planning
-                  </h2>
-
+                {activeTab === "retirement" && (
                   <div className="space-y-6">
-                    {/* Retirement Age */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Retirement Planning Age
+                        Retirement Planning Age{" "}
+                        <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="number"
-                        name="retirement_age"
-                        defaultValue={
-                          profileData?.retirement_planning_age || ""
-                        }
+                        name="retirement_planning_age"
+                        value={formData.retirement_planning_age}
+                        onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                       />
                     </div>
 
-                    {/* Current Assets */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Current Assets (max 5)
-                      </label>
-
-                      {assets.map((item, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 mb-3"
-                        >
-                          <select
-                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                            value={item.type}
-                            onChange={(e) => updateAsset(index, e.target.value)}
-                          >
-                            <option value="">Select Asset</option>
-                            {assetTypes
-                              .filter(
-                                (type) =>
-                                  !usedAssetTypes.includes(type) ||
-                                  type === item.type
-                              )
-                              .map((type) => (
-                                <option key={type} value={type}>
-                                  {type}
-                                </option>
-                              ))}
-                          </select>
-
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
-                              onClick={() => removeAsset(index)}
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      ))}
-
-                      {assets.length < 5 && (
-                        <button
-                          type="button"
-                          onClick={addAsset}
-                          className="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          + Add Asset
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Post Retirement Plans */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Post-Retirement Life Plans
                       </label>
                       <textarea
-                        name="post_life_plans"
-                        defaultValue={
-                          profileData?.post_retirement_life_plans || ""
-                        }
+                        name="post_retirement_life_plans"
+                        value={formData.post_retirement_life_plans}
+                        onChange={handleChange}
                         rows="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900 resize-none"
                       ></textarea>
                     </div>
 
-                    {/* Location Preference */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Post-Retirement Location Preferences
                       </label>
                       <input
                         type="text"
-                        name="retirement_location"
-                        defaultValue={
-                          profileData?.post_retirement_location_preferences ||
-                          ""
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                        name="post_retirement_location_preferences"
+                        value={formData.post_retirement_location_preferences}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
                       />
                     </div>
 
-                    {/* Dreams */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Describe Your Dreams
                       </label>
                       <textarea
                         name="dreams"
-                        defaultValue={profileData?.dreams || ""}
                         rows="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 resize-none"
+                        value={formData.dreams}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900 resize-none"
                       ></textarea>
                     </div>
-                  </div>
-                </div>
+                    <p className="text-sm text-center text-gray-500">
+                      We ask you to provide the following information. Please
+                      note that all fields marked with an asterisk (
+                      <span className="text-red-500">*</span>) are required.
+                    </p>
 
-                {/* Submit Button */}
-                <div className="pt-6">
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Save Profile
-                  </button>
-                </div>
+                    <div className="flex justify-between">
+                      <div className="flex justify-start">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("personal")}
+                          className="flex items-center gap-1 bg-black/95 hover:bg-black text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-arrow-left-icon lucide-arrow-left"
+                          >
+                            <path d="m12 19-7-7 7-7" />
+                            <path d="M19 12H5" />
+                          </svg>{" "}
+                          Back
+                        </button>
+                      </div>
+                      <div className="">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (validateStep()) handleSubmit();
+                          }}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          Save Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 import CustomAlert from "@/components/includes/CustomAlert";
 
 function UserDashboard() {
@@ -48,7 +48,7 @@ function UserDashboard() {
   // ✅ Submit rating
   const handleSubmitRating = async (appointmentId) => {
     const ratingValue = ratings[appointmentId];
-  
+
     // ⚠️ If no rating selected
     if (!ratingValue) {
       setAlert({
@@ -57,14 +57,14 @@ function UserDashboard() {
       });
       return;
     }
-  
+
     try {
       // ✅ Submit rating to backend
       await axiosInstance.post(
         `api/v1/advisor/rate-appointment/${appointmentId}/`,
         { rating: ratingValue }
       );
-  
+
       // ✅ Update state
       setAppointments((prev) =>
         prev.map((appt) =>
@@ -73,7 +73,7 @@ function UserDashboard() {
             : appt
         )
       );
-  
+
       // ✅ Show success alert
       setAlert({
         message: `You rated this appointment ${ratingValue} ★ successfully!`,
@@ -87,7 +87,6 @@ function UserDashboard() {
       });
     }
   };
-  
 
   // ✅ Check if appointment time has passed
   const canMarkAsAttended = (appt) => {

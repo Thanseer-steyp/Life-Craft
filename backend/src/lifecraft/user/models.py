@@ -17,10 +17,10 @@ class Profile(models.Model):
     interests = models.TextField(null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     retirement_planning_age = models.IntegerField(null=True, blank=True)
-    current_assets = models.JSONField(default=list, blank=True)
     post_retirement_life_plans = models.TextField(null=True, blank=True)
     post_retirement_location_preferences = models.CharField(max_length=255, null=True, blank=True)
     dreams = models.TextField(null=True, blank=True)
+
 
     created_at = models.DateTimeField(auto_now_add=True)
 

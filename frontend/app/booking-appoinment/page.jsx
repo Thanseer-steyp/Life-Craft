@@ -1,10 +1,10 @@
 "use client";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 import { AnimatePresence, motion } from "framer-motion";
 import PulseLoader from "react-spinners/PulseLoader";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Star,ClipboardPenLine } from "lucide-react";
+import { Star, ClipboardPenLine } from "lucide-react";
 import CustomAlert from "@/components/includes/CustomAlert";
 
 function AdvisorsPage() {
@@ -852,10 +852,7 @@ function AdvisorsPage() {
                     {reviews.length > 0 ? (
                       <div className="space-y-3 max-h-64 overflow-y-auto">
                         {reviews.map((r) => (
-                          <div
-                            key={r.id}
-                            className="border-b border-gray-100"
-                          >
+                          <div key={r.id} className="border-b border-gray-100">
                             <p className="font-medium text-gray-800 text-xs">
                               {r.user_id === loggedUserId
                                 ? `You (${r.user})`

@@ -14,7 +14,6 @@ urlpatterns = [
     path("chat/<int:appointment_id>/", ChatRoomView.as_view(), name="chat-room"),
     path("chat/<int:appointment_id>/read/", MarkMessagesReadView.as_view(), name="chat-mark-read"),
     path("appointment/<int:appointment_id>/attended/", MarkAppointmentAttendedView.as_view(), name="mark-appointment-attended"),
-
 ]
 
 

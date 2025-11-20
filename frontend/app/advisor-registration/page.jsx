@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 
 function BecomeAdvisorForm() {
   const router = useRouter();
@@ -50,7 +50,7 @@ function BecomeAdvisorForm() {
       setToken(accessToken);
 
       if (!accessToken) {
-        setMessage("No access token found.");
+        setMessage("User not found");
         return;
       }
 
@@ -409,8 +409,6 @@ function BecomeAdvisorForm() {
         }
       });
 
-
-
       const response = await axiosInstance.post(
         "api/v1/user/become-advisor/",
         payload
@@ -424,8 +422,7 @@ function BecomeAdvisorForm() {
         confirmButtonColor: "#16a34a", // nice green color
       }).then((result) => {
         if (result.isConfirmed) {
-          window.dispatchEvent(new Event("advisor-request-updated"));
-          router.push("/"); // redirect after clicking OK
+          window.location.href = "/"; // redirect after clicking OK
         }
       });
     } catch (err) {

@@ -2,7 +2,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
+import { useContext } from "react";
+import { UserContext } from "@/components/config/UserProvider";
+
 
 function AuthPage() {
   const router = useRouter();
@@ -18,6 +21,9 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  const { fetchUser } = useContext(UserContext);
+
 
   const [formData, setFormData] = useState({
     name: "",
@@ -102,7 +108,8 @@ function AuthPage() {
         const userId = res.data.data.user_id; // ✅ correct
         localStorage.setItem("user_id", userId);
 
-        window.dispatchEvent(new Event("login"));
+        await fetchUser(); // 👈 this instantly updates UserContext
+
 
         setSuccess(true);
 
@@ -152,7 +159,7 @@ function AuthPage() {
           const userId = res.data.data.user_id; // ✅ correct
           localStorage.setItem("user_id", userId);
 
-          window.dispatchEvent(new Event("login"));
+          await fetchUser(); // 👈 this instantly updates UserContext
 
           setSuccess(true);
 

@@ -85,7 +85,6 @@ class ProfileSetupView(APIView):
 
 
 
-
 class UserDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

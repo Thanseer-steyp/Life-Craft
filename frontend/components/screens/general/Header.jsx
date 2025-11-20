@@ -1,26 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState, useContext } from "react";
 import { usePathname } from "next/navigation";
-import axiosInstance from "@/components/config/axiosInstance";
+import Link from "next/link";
+import axiosInstance from "@/components/config/AxiosInstance";
+import { UserContext } from "@/components/config/UserProvider";
 
 function Header() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [user, setUser] = useState(null);
+  const { userData: user } = useContext(UserContext);
   const [advisorRequested, setAdvisorRequested] = useState(false);
-  const [hasProfile, setHasProfile] = useState(false);
-  const [token, setToken] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showMenu, setShowMenu] = useState(false); // State to toggle menu
   const [userRole, setUserRole] = useState("User");
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("access");
-    setToken(storedToken);
-  }, []);
 
   useEffect(() => {
     if (showMenu) {
@@ -35,33 +27,9 @@ function Header() {
     };
   }, [showMenu]);
 
-  useEffect(() => {
-    const accessToken = localStorage.getItem("access");
-    if (!accessToken) return;
-
-    const fetchProfileStatus = async () => {
-      try {
-        const res = await axiosInstance.get("api/v1/user/profile-setup/");
-        setHasProfile(!!res.data.profile_exists);
-      } catch {
-        setHasProfile(false);
-      }
-    };
-
-    fetchProfileStatus();
-
-    // 🔹 Re-fetch when profile changes (e.g. after profile setup)
-    const handleProfileUpdate = () => fetchProfileStatus();
-    window.addEventListener("profile-updated", handleProfileUpdate);
-
-    return () =>
-      window.removeEventListener("profile-updated", handleProfileUpdate);
-  }, []);
-
   // ✅ 2️⃣ Check Advisor Request
   useEffect(() => {
-    const accessToken = localStorage.getItem("access");
-    if (!accessToken) return;
+    if (!user) return;
 
     const fetchAdvisorStatus = async () => {
       try {
@@ -73,36 +41,7 @@ function Header() {
     };
 
     fetchAdvisorStatus();
-
-    // 🔹 Re-fetch when advisor request changes
-    const handleAdvisorUpdate = () => fetchAdvisorStatus();
-    window.addEventListener("advisor-request-updated", handleAdvisorUpdate);
-
-    return () =>
-      window.removeEventListener(
-        "advisor-request-updated",
-        handleAdvisorUpdate
-      );
-  }, []);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
-      try {
-        const res = await axiosInstance.get("api/v1/user/user-dashboard/");
-        setUser(res.data);
-      } catch (err) {
-        console.error(err);
-        setUser(null);
-      }
-    };
-
-    fetchUser();
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     const checkAdvisor = async () => {
@@ -125,14 +64,6 @@ function Header() {
   }, [user]);
 
   useEffect(() => {
-    const handleLogin = () => {
-      setToken(localStorage.getItem("access"));
-    };
-    window.addEventListener("login", handleLogin);
-    return () => window.removeEventListener("login", handleLogin);
-  }, []);
-
-  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -144,9 +75,7 @@ function Header() {
 
   const handleLogout = () => {
     localStorage.clear();
-    window.dispatchEvent(new Event("login-status-changed"));
-    router.push("/authentication");
-    //window.location.reload();
+    window.location.href = "/authentication"; // reloads and clears context
   };
 
   return (
@@ -287,14 +216,14 @@ function Header() {
                   className="px-2 py-1 bg-white shadow-xl rounded-lg flex hover:bg-gray-50"
                 >
                   <div className="w-9 h-9 flex items-center justify-center rounded-lg border overflow-hidden border-gray-100 bg-white font-bold text-xl select-none z-50 text-black">
-                    {user.profile?.profile_picture ? (
+                    {user?.profile_picture ? (
                       <img
-                        src={`${axiosInstance.defaults.baseURL}${user.profile.profile_picture}`}
+                        src={`${axiosInstance.defaults.baseURL}${user?.profile_picture}`}
                         alt="Profile"
                         className="w-full h-full"
                       />
                     ) : (
-                      user?.name?.[0]?.toUpperCase() ||
+                      user?.full_name?.[0]?.toUpperCase() ||
                       user?.username?.[0]?.toUpperCase() ||
                       "🧑‍💻"
                     )}
@@ -302,9 +231,11 @@ function Header() {
 
                   <div className="ml-2">
                     <p className="text-black text-sm font-medium">
-                      {user.name || user.username || "Guest"}
+                      {user.full_name || user.username || "Guest"}
                     </p>
-                    <p className="text-gray-500 text-xs">{userRole || "User"}</p>
+                    <p className="text-gray-500 text-xs">
+                      {userRole || "User"}
+                    </p>
                   </div>
                 </Link>
               </div>
@@ -546,7 +477,7 @@ function Header() {
 
         {/* Login / Logout */}
         <div>
-          {token ? (
+          {user ? (
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 cursor-pointer hover:-translate-x-0.5 hover:shadow-lg w-full px-4 py-2 rounded-md transition"

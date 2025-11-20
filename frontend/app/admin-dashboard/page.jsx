@@ -12,7 +12,7 @@ import {
   GraduationCap,
   ScanSearch,
 } from "lucide-react";
-import axiosInstance from "@/components/config/axiosInstance";
+import axiosInstance from "@/components/config/AxiosInstance";
 
 function AdminDashboard() {
   const router = useRouter();
@@ -25,7 +25,6 @@ function AdminDashboard() {
 
   const handleLogout = () => {
     localStorage.clear();
-    window.dispatchEvent(new Event("login-status-changed"));
     router.push("/authentication");
   };
 

@@ -13,6 +13,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     retirement_time_left = serializers.SerializerMethodField()
 
 
+
     class Meta:
         model = Profile
         fields = [
@@ -24,7 +25,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "gender",
             "marital_status",
             "phone_number",
-            "age",                           # ← ADD HERE
+            "age",                          
             "retirement_time_left",  
             "country",
             "state",
@@ -33,7 +34,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "interests",
             "bio",
             "retirement_planning_age",
-            "current_assets",
             "post_retirement_life_plans",
             "post_retirement_location_preferences",
             "dreams",
