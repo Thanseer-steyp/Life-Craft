@@ -121,17 +121,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     
 
-class UserDashboardSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    profile = ProfileSerializer(read_only=True)
 
-    class Meta:
-        model = User
-        fields = ["username", "email", "name","profile"]
-
-    def get_name(self, obj):
-        full_name = f"{obj.first_name}"
-        return full_name
 
 
 

@@ -2,7 +2,7 @@ from rest_framework import permissions, status
 import threading
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer,UserDashboardSerializer
+from .serializers import ProfileSerializer,AdvisorRequestSerializer,UserSerializer,AppointmentSerializer
 from user.models import AdvisorRequest,Appointment,Profile
 from api.v1.advisor.serializers import AppointmentWithRatingSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -85,12 +85,7 @@ class ProfileSetupView(APIView):
 
 
 
-class UserDashboardView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        serializer = UserDashboardSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

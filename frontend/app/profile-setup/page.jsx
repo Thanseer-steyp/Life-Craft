@@ -4,7 +4,7 @@ import axiosInstance from "@/components/config/AxiosInstance";
 import CustomAlert from "@/components/includes/CustomAlert";
 import { useContext } from "react";
 import { UserContext } from "@/components/config/UserProvider";
-
+import CustomDatePicker from "@/components/utils/CustomDatePicker";
 
 function ProfileSetupForm() {
   const [profileExists, setProfileExists] = useState(false);
@@ -18,6 +18,8 @@ function ProfileSetupForm() {
   const [activeTab, setActiveTab] = useState("personal");
 
   const formRef = useRef(null);
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [displayDob, setDisplayDob] = useState("");
 
   const [formData, setFormData] = useState({
     dob: profileData?.dob || "",
@@ -147,12 +149,22 @@ function ProfileSetupForm() {
   const handleSubmit = async () => {
     const fd = new FormData();
 
+    // Format and append DOB properly
+    if (formData.dob) {
+      const dateObj = new Date(formData.dob);
+      const formattedDOB = dateObj.toISOString().split("T")[0];
+      fd.append("dob", formattedDOB);
+    }
+
     if (selectedFile) {
       fd.append("profile_picture", selectedFile);
     }
 
+    // Append other fields except dob
     Object.entries(formData).forEach(([key, value]) => {
-      fd.append(key, value);
+      if (key !== "dob") {
+        fd.append(key, value);
+      }
     });
 
     try {
@@ -486,18 +498,31 @@ function ProfileSetupForm() {
                 {activeTab === "personal" && (
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
+                      <div className="relative">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Date of Birth <span className="text-red-600">*</span>
                         </label>
-                        <input
-                          type="date"
-                          value={formData.dob}
-                          onChange={handleChange}
-                          name="dob"
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900"
+
+                        <div
+                          onClick={() => setShowCustomDatePicker(true)}
+                          className="cursor-pointer w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:shadow-md text-gray-900 bg-white"
+                        >
+                          {displayDob || "Select Date of Birth"}
+                        </div>
+
+                        {showCustomDatePicker && (
+                          <CustomDatePicker
+                          formData={formData}
+                          setFormData={setFormData}
+                          setDisplayDate={setDisplayDob}
+                          setShowCustomDatePicker={setShowCustomDatePicker}
+                          type="dob"
+                          onDateSelect={(date) => {
+                            setFormData(prev => ({ ...prev, dob: date }));
+                          }}
                         />
+                        
+                        )}
                       </div>
 
                       <div>

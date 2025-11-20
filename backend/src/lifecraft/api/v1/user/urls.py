@@ -1,10 +1,9 @@
 from django.urls import path
-from .views import (ProfileSetupView,UserDashboardView,AdvisorRequestView,ClientsListView, ClientDetailView,
+from .views import (ProfileSetupView,AdvisorRequestView,ClientsListView, ClientDetailView,
 BookAppointmentView,UserAppointmentsView,ChatRoomView,MarkMessagesReadView,CheckAppointmentStatusView,MarkAppointmentAttendedView)
 
 urlpatterns = [
     path("profile-setup/", ProfileSetupView.as_view(), name="profile-setup"),
-    path("user-dashboard/", UserDashboardView.as_view(), name="user-dashboard"),
     path("book-appointment/", BookAppointmentView.as_view(), name="book-appointment"),
     path("become-advisor/", AdvisorRequestView.as_view(), name="become-advisor"),
     path('clients-list/', ClientsListView.as_view(), name='clients-list'),
