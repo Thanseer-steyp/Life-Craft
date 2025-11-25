@@ -50,7 +50,6 @@ class AdvisorAvailability(models.Model):
     )
     day = models.CharField(max_length=10, choices=DAYS_OF_WEEK, unique=True)
     is_available = models.BooleanField(default=False)
-    total_slots = models.PositiveIntegerField(null=True, blank=True)
     time_range = models.CharField(max_length=20, null=True, blank=True)
 
     updated_at = models.DateTimeField(auto_now=True)

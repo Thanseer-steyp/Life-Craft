@@ -65,7 +65,6 @@ function AdvisorDashboard() {
             return {
               ...item,
               is_available: false,
-              total_slots: 0,
               time_range: "",
             };
           }
@@ -98,9 +97,9 @@ function AdvisorDashboard() {
   };
   const saveAvailability = (dayData) => {
     if (dayData.is_available) {
-      if (!dayData.total_slots || !dayData.time_range.trim()) {
+      if (!dayData.time_range.trim()) {
         alert(
-          "Please fill in both 'Total Slots' and 'Time Range' before saving."
+          "Please select 'Time Range' before saving."
         );
         return;
       }
@@ -454,23 +453,6 @@ function AdvisorDashboard() {
 
                       {day.is_available && (
                         <>
-                          <input
-                            type="number"
-                            placeholder="Total slots"
-                            className={`border rounded p-2 text-gray-800 no-arrows ${
-                              !isEditing && "bg-gray-100 cursor-not-allowed"
-                            }`}
-                            value={day.total_slots || ""}
-                            disabled={!isEditing}
-                            onChange={(e) =>
-                              updateAvailability(
-                                day.day,
-                                "total_slots",
-                                e.target.value
-                              )
-                            }
-                          />
-
                           <div className="flex flex-wrap items-center gap-2">
                             {/* Start Time */}
                             <div

@@ -131,7 +131,7 @@ SIMPLE_JWT = {
 
 
 
-if platform.system() != "Windows":   # only enable real email sending on non-Windows
+if platform.system() != "Windows":
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = "smtp.gmail.com"
     EMAIL_PORT = 587
@@ -140,7 +140,6 @@ if platform.system() != "Windows":   # only enable real email sending on non-Win
     EMAIL_HOST_PASSWORD = "tupp rqej qjgb lwkg"
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 else:
-    # On Windows (development), don't send actual emails
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     EMAIL_HOST_USER = "lifecraft.dev@gmail.com"
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 

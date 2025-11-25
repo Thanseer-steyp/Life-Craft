@@ -7,7 +7,7 @@ from django.db import models
 class AdvisorAvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvisorAvailability
-        fields = ["id", "day", "is_available", "total_slots", "time_range"]
+        fields = ["id", "day", "is_available", "time_range"]
 
 
 class AdvisorSerializer(serializers.ModelSerializer):
@@ -54,12 +54,19 @@ class AppointmentWithRatingSerializer(serializers.ModelSerializer):
     rating_given = serializers.SerializerMethodField()
     rating_value = serializers.SerializerMethodField()
     advisor_name = serializers.CharField(source="advisor.full_name", read_only=True)
+    advisor_type = serializers.CharField(source="advisor.advisor_type", read_only=True)
+    advisor_photo = serializers.ImageField(source="advisor.profile_photo", read_only=True)
+    advisor_email = serializers.CharField(source="advisor.email", read_only=True)
+
 
     class Meta:
         model = Appointment
         fields = [
             "id",
             "advisor_name",
+            "advisor_photo",
+            "advisor_email",
+            "advisor_type",
             "preferred_day",
             "preferred_time",
             "communication_method",

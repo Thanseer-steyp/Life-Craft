@@ -416,7 +416,7 @@ function AdvisorsPage() {
                       Consultation Fee
                     </span>
                     <span className="text-sm font-semibold text-gray-800">
-                      ₹{advisor.consultation_fee}
+                      ₹{Math.floor(advisor.consultation_fee)}
                     </span>
                   </div>
                 </div>
@@ -807,9 +807,6 @@ function AdvisorsPage() {
                               <>
                                 <span className="text-sm text-gray-600">
                                   {slot.time_range}
-                                </span>
-                                <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                                  {slot.total_slots} slots
                                 </span>
                               </>
                             ) : (
