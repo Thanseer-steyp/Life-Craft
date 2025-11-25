@@ -6,12 +6,16 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from register.models import EmailOTP
 from .serializers import SignupSerializer, LoginSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer,SignupOTPVerificationSerializer
 
 
 class SignupRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
@@ -43,6 +47,9 @@ class SignupRequestView(APIView):
 
 
 class SignupView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = SignupOTPVerificationSerializer(data=request.data)
         if serializer.is_valid():
@@ -87,6 +94,9 @@ class SignupView(APIView):
     
 
 class SignupOTPResendView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         email = request.data.get("email")
         if not email:
@@ -119,6 +129,9 @@ class SignupOTPResendView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -150,6 +163,9 @@ class LoginView(APIView):
 
 
 class LoginOTPRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         email = request.data.get("email")
         if not email:
@@ -182,6 +198,9 @@ class LoginOTPRequestView(APIView):
 
 
 class LoginOTPVerificationView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         email = request.data.get("email")
         entered_otp = request.data.get("otp")
@@ -213,6 +232,9 @@ class LoginOTPVerificationView(APIView):
 
 
 class PasswordResetOTPRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         if serializer.is_valid():
@@ -241,6 +263,9 @@ class PasswordResetOTPRequestView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():
