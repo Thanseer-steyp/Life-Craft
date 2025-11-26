@@ -39,8 +39,13 @@ function AdvisorsPage() {
         const allReviews = res.data.reviews || [];
         const loggedId = res.data.logged_in_user;
         const userReview = res.data.user_review;
-
         setLoggedUserId(loggedId);
+
+        setSelected((prev) => ({
+        ...prev,
+        total_ratings: res.data.total_ratings,
+        total_reviews: res.data.reviews.length,
+      }));
 
         // ✅ Move logged-in user's review to top
         const sortedReviews = userReview
@@ -426,34 +431,31 @@ function AdvisorsPage() {
             {/* Advisor Details */}
             {selected && (
               <div className="flex-1 bg-white rounded-xl shadow-sm p-8">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-start gap-4">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4 h-21 overflow-hidden">
                     <img
                       src={`${axiosInstance.defaults.baseURL}${selected.profile_photo}`}
                       alt={selected.full_name}
-                      className="w-20 h-20 rounded-lg"
+                      className="w-21 h-21 rounded-lg"
                     />
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-800">
+                    <div className="flex flex-col justify-between">
+                      <p className="text-2xl font-bold text-gray-800">
                         {selected.full_name}
-                      </h2>
-                      <p className="text-gray-600 capitalize">
-                        {selected.advisor_type} Advisor •{" "}
-                        {selected.experience_years} years experience
                       </p>
-                      <div className="flex items-center gap-1 mt-1">
+                      <span className="text-base text-gray-600 capitalize">
+                        {selected.advisor_type} Advisor
+                      </span>
+                      <div className="flex items-center gap-1">
                         {selected.average_rating > 0 && (
-                          <>
-                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                            <span className="text-sm text-gray-600">
-                              {selected.average_rating} •{" "}
+                          <div className="bg-[#388e3c] py-1 px-2 flex items-center gap-1 rounded-md">
+                            <span className="font-bold text-sm text-white">
+                              {selected.average_rating}
                             </span>
-                          </>
+                            <Star className="w-3.5 h-3.5 fill-white text-white" />
+                          </div>
                         )}
-
-                        <span className="text-sm text-gray-600">
-                          {new Date().getFullYear() - selected.dob_year} Years
-                          Old
+                        <span className="text-gray-600 text-sm">
+                          ({selected.total_ratings} Ratings)
                         </span>
                       </div>
                     </div>
@@ -496,9 +498,6 @@ function AdvisorsPage() {
                         Book Appointment
                       </button>
                     )}
-                    <span className="block text-sm mt-1 text-gray-600 text-center">
-                      {selected.completed_appointments} Consultations Completed
-                    </span>
                   </div>
                 </div>
 
@@ -849,7 +848,7 @@ function AdvisorsPage() {
                     {reviews.length > 0 ? (
                       <div className="space-y-3 max-h-64 overflow-y-auto">
                         {reviews.map((r) => (
-                          <div key={r.id} className="border-b border-gray-100">
+                          <div key={r.id} className="border-b border-gray-300">
                             <p className="font-medium text-gray-800 text-xs">
                               {r.user_id === loggedUserId
                                 ? `You (${r.user})`
